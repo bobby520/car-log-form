@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Driving Record QR Generator</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 600px; 
+            margin: 20px auto; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .form-group { 
+            margin-bottom: 15px; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 5px; 
+            font-weight: bold; 
+            color: #333;
+        }
+        input, select, button { 
+            width: 100%; 
+            padding: 10px; 
+            margin-bottom: 15px; 
+            border: 1px solid #ddd; 
+            border-radius: 4px; 
+            box-sizing: border-box;
+        }
+        select {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            background-size: 12px;
+        }
+        button { 
+            background-color: #4CAF50; 
+            color: white; 
+            font-weight: bold; 
+            border: none; 
+            cursor: pointer; 
+            transition: background-color 0.3s;
+        }
+        button:hover { 
+            background-color: #45a049; 
+        }
+        #qrcode { 
+            margin: 20px auto; 
+            text-align: center; 
+            padding: 15px; 
+            background: white; 
+            border-radius: 4px; 
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h2>Driving Record Entry</h2>
+    
+    <!-- Form Fields -->
+    <div class="form-group">
+        <label for="date">Date:</label>
+        <input type="date" id="date" required>
+    </div>
+
+    <div class="form-group">
+        <label for="plate">License Plate:</label>
+        <select id="plate" required>
+            <option value="" disabled selected>Select Vehicle</option>
+            <option value="N75132">N75132</option>
+            <option value="N75133">N75133</option>
+            <option value="Other">Other (Manual Input)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label for="name">Booked by:</label>
+        <input type="text" id="name" placeholder="e.g., Mr. Zhang" required>
+    </div>
+
+    <div class="form-group">
+        <label for="start-time">Start Time:</label>
+        <input type="time" id="start-time" required>
+    </div>
+
+    <div class="form-group">
+        <label for="start-km">Start Odometer (KM):</label>
+        <input type="number" id="start-km" placeholder="e.g., 49332" min="0" required>
+    </div>
+
+    <div class="form-group">
+        <label for="end-time">End Time:</label>
+        <input type="time" id="end-time" required>
+    </div>
+
+    <div class="form-group">
+        <label for="end-km">End Odometer (KM):</label>
+        <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
+    </div>
+
+    <button onclick="generateQR()">Generate QR Code</button>
+    <div id="qrcode"></div>
+
+    <script>
+        // 1. Handle manual license plate input
+        document.getElementById('plate').addEventListener('change', function() {
+            if (this.value === 'Other') {
+                const manualPlate = prompt('Please enter license plate number:');
+                if (manualPlate) {
+                    const newOption = document.createElement('option');
+                    newOption.value = manualPlate;
+                    newOption.textContent = manualPlate;
+                    this.appendChild(newOption);
+                    this.value = manualPlate;
+                }
+            }
+        });
+
+        // 2. Generate QR Code with validation
+        function generateQR() {
+            const qrcodeDiv = document.getElementById("qrcode");
+            qrcodeDiv.innerHTML = "";
+
+            // Auto-calculate end date (start date + 1 day)
+            const startDate = new Date(document.getElementById("date").value);
+            startDate.setDate(startDate.getDate() + 1);
+            const endDate = startDate.toISOString().split('T')[0];
+
+            // Build labeled data string
+            const data = [
+                `plate:${document.getElementById("plate").value}`,
+                `date:${document.getElementById("date").value}`,
+                `start_time:${document.getElementById("start-time").value}`,
+                `end_date:${endDate}`,
+                `end_time:${document.getElementById("end-time").value}`,
+                `booker:${document.getElementById("name").value}`,
+                `start_km:${document.getElementById("start-km").value}`,
+                `end_km:${document.getElementById("end-km").value}`
+            ].join("|");
+
+            // Validate odometer
+            if (Number(document.getElementById("end-km").value) <= Number(document.getElementById("start-km").value)) {
+                alert("Error: End odometer must be greater than start odometer!");
+                return;
+            }
+
+            // Generate QR Code
+            new QRCode(qrcodeDiv, {
+                text: data,
+                width: 200,
+                height: 200,
+                colorDark: "#2c3e50",
+                colorLight: "#ffffff",
+                correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // Scroll to QR code
+            qrcodeDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
