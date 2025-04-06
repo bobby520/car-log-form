@@ -212,7 +212,6 @@
     <script>
         let generatedImageElement = null;
 
-        // 车牌手动输入
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Enter license plate:');
@@ -226,7 +225,6 @@
             }
         });
 
-        // 数据同步函数
         function syncFormData() {
             document.getElementById('show-driver').textContent = document.getElementById('driver').value;
             document.getElementById('show-date').textContent = document.getElementById('date').value;
@@ -239,7 +237,6 @@
         }
 
         async function generateAndShare() {
-            // 数据验证
             const startKm = +document.getElementById("start-km").value;
             const endKm = +document.getElementById("end-km").value;
             if (endKm <= startKm) {
@@ -251,14 +248,11 @@
                 return;
             }
 
-            // 同步表单数据到预览区域
             syncFormData();
 
-            // 生成二维码
             const qrcodeDiv = document.getElementById("qrcode-section");
             qrcodeDiv.innerHTML = "";
             
-            // 确保DOM更新
             await new Promise(resolve => requestAnimationFrame(resolve));
             
             new QRCode(qrcodeDiv, {
@@ -270,37 +264,30 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            // 等待二维码渲染
             await new Promise(resolve => setTimeout(resolve, 300));
 
-            // 显示临时容器
             const exportContainer = document.getElementById("export-container");
             exportContainer.style.display = "flex";
             
             try {
-                // 生成图片
                 const canvas = await html2canvas(exportContainer, {
                     useCORS: true,
-                    scale: 2,
+                    scale: 1,  // 关键修改点：降低缩放比例
                     logging: true,
                     onclone: (clonedDoc) => {
                         clonedDoc.getElementById('export-container').style.display = 'flex';
                     }
                 });
 
-                // 隐藏临时容器
                 exportContainer.style.display = "none";
 
-                // 移除旧图片
                 if (generatedImageElement) generatedImageElement.remove();
 
-                // 显示新图片
                 generatedImageElement = document.createElement('img');
                 generatedImageElement.src = canvas.toDataURL();
                 generatedImageElement.id = 'generated-image';
                 document.body.appendChild(generatedImageElement);
 
-                // 自动下载（非微信环境）
                 if (!/MicroMessenger/i.test(navigator.userAgent)) {
                     const link = document.createElement('a');
                     link.download = `Driving_Record_${Date.now()}.png`;
