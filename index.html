@@ -126,7 +126,7 @@
         <h2>Anton Oilfield Services DMCC Driving System</h2>
     </div>
 
-    <!-- 完整表单字段 -->
+    <!-- 表单字段 -->
     <div class="form-group">
         <label for="driver">Driver Name:</label>
         <select id="driver" required>
@@ -179,9 +179,9 @@
         <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
     </div>
 
-    <button onclick="generateQR()">Generate QR Code</button>
+    <button onclick="generateAndShare()">Generate QR Code</button>
 
-    <!-- 数据展示区 -->
+    <!-- 数据展示容器 -->
     <div id="export-container">
         <div id="summary-section">
             <h3 style="margin:0 0 20px 0; color: #2c3e50;">Driving Record Summary</h3>
@@ -217,10 +217,6 @@
         <div id="qrcode-section"></div>
     </div>
 
-    <button class="export-btn" onclick="handleWechatShare()">
-        Share via WeChat
-    </button>
-
     <script>
         // 车牌手动输入功能
         document.getElementById('plate').addEventListener('change', function() {
@@ -236,12 +232,8 @@
             }
         });
 
-        // 生成二维码函数
-        function generateQR() {
-            // 清空旧内容
-            document.getElementById("export-container").style.display = "none";
-            document.getElementById("qrcode-section").innerHTML = "";
-
+        // 合并生成和分享功能
+        async function generateAndShare() {
             // 数据验证
             const startKm = Number(document.getElementById("start-km").value);
             const endKm = Number(document.getElementById("end-km").value);
@@ -266,8 +258,12 @@
             document.getElementById("show-odo").textContent = 
                 `${document.getElementById("start-km").value} → ${document.getElementById("end-km").value} KM`;
 
-            // 生成二维码
-            new QRCode(document.getElementById("qrcode-section"), {
+            // 清空旧二维码
+            const qrcodeDiv = document.getElementById("qrcode-section");
+            qrcodeDiv.innerHTML = "";
+            
+            // 生成新二维码
+            new QRCode(qrcodeDiv, {
                 text: buildDataString(),
                 width: 200,
                 height: 200,
@@ -278,7 +274,44 @@
 
             // 显示结果区域
             document.getElementById("export-container").style.display = "flex";
-            document.getElementById("export-container").scrollIntoView({ behavior: 'smooth' });
+            
+            // 等待二维码渲染完成
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // 生成分享图片
+            try {
+                const canvas = await html2canvas(document.querySelector("#export-container"), {
+                    backgroundColor: null,
+                    useCORS: true,
+                    scale: 2
+                });
+                
+                const imgData = canvas.toDataURL('image/png');
+                
+                if (/MicroMessenger/i.test(navigator.userAgent)) {
+                    // 微信环境显示图片
+                    const img = document.createElement('img');
+                    img.src = imgData;
+                    img.style.maxWidth = '100%';
+                    img.style.margin = '20px auto';
+                    img.style.display = 'block';
+                    
+                    // 插入到结果容器下方
+                    const container = document.getElementById("export-container");
+                    container.parentNode.insertBefore(img, container.nextSibling);
+                    
+                    alert("Long press the image to share");
+                } else {
+                    // 自动下载
+                    const link = document.createElement('a');
+                    link.download = `Anton_Record_${Date.now()}.png`;
+                    link.href = imgData;
+                    link.click();
+                }
+            } catch (err) {
+                console.error('Error generating image:', err);
+                alert("Failed to generate image. Please try again.");
+            }
         }
 
         // 构建数据字符串
@@ -298,37 +331,6 @@
                 `start_km:${document.getElementById("start-km").value}`,
                 `end_km:${document.getElementById("end-km").value}`
             ].join("|");
-        }
-
-        // 微信分享处理
-        function handleWechatShare() {
-            html2canvas(document.querySelector("#export-container"), {
-                backgroundColor: null,
-                useCORS: true,
-                scale: 2
-            }).then(canvas => {
-                const imgData = canvas.toDataURL('image/png');
-                
-                if (/MicroMessenger/i.test(navigator.userAgent)) {
-                    // 微信环境显示图片供长按分享
-                    const img = new Image();
-                    img.src = imgData;
-                    img.style.maxWidth = '100%';
-                    img.style.margin = '20px auto';
-                    img.style.display = 'block';
-                    document.body.appendChild(img);
-                    alert("Long press the image to share");
-                } else {
-                    // 其他浏览器直接下载
-                    const link = document.createElement('a');
-                    link.download = `Anton_Record_${Date.now()}.png`;
-                    link.href = imgData;
-                    link.click();
-                }
-            }).catch(err => {
-                console.error('Error generating image:', err);
-                alert("Failed to generate image. Please try again.");
-            });
         }
     </script>
 </body>
