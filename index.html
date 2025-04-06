@@ -20,18 +20,14 @@
         }
         .company-logo {
             height: 30px;
-            width: auto;
             margin-bottom: 8px;
-            cursor: pointer;
-            transition: opacity 0.3s;
         }
-        .company-logo:hover {
-            opacity: 0.8;
-        }
-        h2 {
-            font-size: 1.3em;
-            margin: 0;
-            color: #333;
+        .form-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         .form-group { 
             margin-bottom: 12px; 
@@ -41,7 +37,6 @@
             margin-bottom: 4px; 
             font-weight: bold; 
             color: #444;
-            font-size: 0.95em;
         }
         input, select, button { 
             width: 100%; 
@@ -50,25 +45,13 @@
             border: 1px solid #ddd; 
             border-radius: 3px; 
             box-sizing: border-box;
-            font-size: 0.95em;
-        }
-        select {
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23444"><path d="M7 10l5 5 5-5z"/></svg>');
-            background-repeat: no-repeat;
-            background-position: right 8px center;
-            background-size: 10px;
         }
         button { 
             background-color: #1AAD19;
             color: white; 
-            font-weight: bold; 
             border: none; 
             cursor: pointer; 
-            transition: background-color 0.3s;
             padding: 10px 0;
-        }
-        button:hover { 
-            background-color: #179B16; 
         }
         #export-container {
             display: none;
@@ -80,41 +63,27 @@
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             flex-direction: column;
         }
-        #summary-section {
-            width: 100%;
+        .export-logo {
+            height: 40px;
+            margin: 0 auto 15px;
+            display: block;
+        }
+        .export-title {
+            text-align: center;
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #eee;
         }
         #qrcode-section {
-            width: 100%;
+            text-align: center;
             margin-top: 20px;
             padding: 20px;
-            background: #f8f9fa;
-            border-radius: 6px;
-            text-align: center;
         }
         #qrcode-section canvas {
             width: 200px !important;
             height: 200px !important;
-            margin: 0 auto;
-        }
-        .summary-item {
-            margin: 10px 0;
-            padding: 10px;
-            background: #f8f9fa;
-            border-radius: 5px;
-        }
-        .summary-label {
-            color: #666;
-            font-weight: bold;
-            display: inline-block;
-            width: 120px;
-            font-size: 0.9em;
-        }
-        .form-section {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
         }
         #generated-image {
             max-width: 600px;
@@ -128,18 +97,15 @@
 </head>
 <body>
     <div class="header">
-        <a href="https://www.antonoil.com" target="_blank">
-            <img src="https://www.antonoil.com/statics/images/img/logo2021.png" 
-                 class="company-logo" 
-                 alt="Anton Oilfield Services DMCC"
-                 title="Visit official website">
-        </a>
+        <img src="https://www.antonoil.com/statics/images/img/logo2021.png" 
+             class="company-logo" 
+             alt="Company Logo">
         <h2>Anton Oilfield Services DMCC Driving System</h2>
     </div>
 
     <div class="form-section">
         <div class="form-group">
-            <label for="driver">Driver Name:</label>
+            <label>Driver Name:</label>
             <select id="driver" required>
                 <option value="" disabled selected>Select Driver</option>
                 <option value="Mudassar">Mudassar</option>
@@ -149,44 +115,43 @@
         </div>
 
         <div class="form-group">
-            <label for="date">Date:</label>
+            <label>Date:</label>
             <input type="date" id="date" required>
         </div>
 
         <div class="form-group">
-            <label for="plate">License Plate:</label>
+            <label>License Plate:</label>
             <select id="plate" required>
                 <option value="" disabled selected>Select Vehicle</option>
                 <option value="F24345">F24345</option>
                 <option value="N75133">N75133</option>
                 <option value="M92098">M92098</option>
-                <option value="T71027">T71027</option>
                 <option value="Other">Other (Manual Input)</option>
             </select>
         </div>
 
         <div class="form-group">
-            <label for="name">Booked by:</label>
+            <label>Booked by:</label>
             <input type="text" id="name" placeholder="e.g., Mr. Zhang" required>
         </div>
 
         <div class="form-group">
-            <label for="start-time">Start Time:</label>
+            <label>Start Time:</label>
             <input type="time" id="start-time" required>
         </div>
 
         <div class="form-group">
-            <label for="start-km">Start Odometer (KM):</label>
+            <label>Start Odometer (KM):</label>
             <input type="number" id="start-km" placeholder="e.g., 49332" min="0" required>
         </div>
 
         <div class="form-group">
-            <label for="end-time">End Time:</label>
+            <label>End Time:</label>
             <input type="time" id="end-time" required>
         </div>
 
         <div class="form-group">
-            <label for="end-km">End Odometer (KM):</label>
+            <label>End Odometer (KM):</label>
             <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
         </div>
 
@@ -194,8 +159,12 @@
     </div>
 
     <div id="export-container">
+        <img src="https://www.antonoil.com/statics/images/img/logo2021.png" 
+             class="export-logo"
+             alt="Company Logo">
+        <div class="export-title">Driving Record Summary</div>
+        
         <div id="summary-section">
-            <h3 style="margin:0 0 20px 0; color: #2c3e50;">Driving Record Summary</h3>
             <div class="summary-item">
                 <span class="summary-label">Driver:</span>
                 <span id="show-driver"></span>
@@ -231,13 +200,13 @@
     <script>
         let generatedImageElement = null;
 
+        // 车牌手动输入
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
-                const manualPlate = prompt('Please enter license plate number:');
+                const manualPlate = prompt('Enter license plate:');
                 if (manualPlate) {
                     const newOption = document.createElement('option');
-                    newOption.value = manualPlate;
-                    newOption.textContent = manualPlate;
+                    newOption.value = newOption.textContent = manualPlate;
                     this.appendChild(newOption);
                     this.value = manualPlate;
                 }
@@ -245,25 +214,23 @@
         });
 
         async function generateAndShare() {
-            const startKm = Number(document.getElementById("start-km").value);
-            const endKm = Number(document.getElementById("end-km").value);
+            // 数据验证
+            const startKm = +document.getElementById("start-km").value;
+            const endKm = +document.getElementById("end-km").value;
             if (endKm <= startKm) {
-                alert("Error: End odometer must be greater than start odometer!");
+                alert("Error: End odometer must be greater than start!");
                 return;
             }
-
             if (!document.getElementById("date").value) {
-                alert("Please select a date!");
+                alert("Please select date!");
                 return;
             }
 
-            // 更新摘要信息
-            document.getElementById("show-driver").textContent = document.getElementById("driver").value;
-            document.getElementById("show-date").textContent = document.getElementById("date").value;
-            document.getElementById("show-plate").textContent = document.getElementById("plate").value;
-            document.getElementById("show-booker").textContent = document.getElementById("name").value;
-            document.getElementById("show-start-time").textContent = document.getElementById("start-time").value;
-            document.getElementById("show-end-time").textContent = document.getElementById("end-time").value;
+            // 更新显示数据
+            document.querySelectorAll('[id^="show-"]').forEach(el => {
+                const field = el.id.replace('show-', '');
+                el.textContent = document.getElementById(field).value;
+            });
             document.getElementById("show-odo").textContent = 
                 `${document.getElementById("start-km").value} → ${document.getElementById("end-km").value} KM`;
 
@@ -279,64 +246,55 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            // 显示导出容器
+            // 显示临时容器
             const exportContainer = document.getElementById("export-container");
             exportContainer.style.display = "flex";
-            exportContainer.style.width = "600px";
-
-            // 等待布局稳定
-            await new Promise(resolve => setTimeout(resolve, 150));
-
+            
             try {
+                // 生成图片
                 const canvas = await html2canvas(exportContainer, {
                     useCORS: true,
                     scale: 2,
                     logging: true
                 });
 
-                // 隐藏导出容器
+                // 隐藏临时容器
                 exportContainer.style.display = "none";
 
                 // 移除旧图片
-                if (generatedImageElement) {
-                    generatedImageElement.remove();
-                }
+                if (generatedImageElement) generatedImageElement.remove();
 
-                // 创建并显示新图片
+                // 显示新图片
                 generatedImageElement = document.createElement('img');
-                generatedImageElement.src = canvas.toDataURL('image/png');
+                generatedImageElement.src = canvas.toDataURL();
                 generatedImageElement.id = 'generated-image';
-                
-                // 插入到表单下方
-                const formSection = document.querySelector('.form-section');
-                formSection.parentNode.insertBefore(generatedImageElement, formSection.nextSibling);
+                document.body.appendChild(generatedImageElement);
 
-                if (/MicroMessenger/i.test(navigator.userAgent)) {
-                    alert("Long press the image to share");
-                } else {
+                // 自动下载（非微信环境）
+                if (!/MicroMessenger/i.test(navigator.userAgent)) {
                     const link = document.createElement('a');
                     link.download = `Driving_Record_${Date.now()}.png`;
                     link.href = generatedImageElement.src;
                     link.click();
+                } else {
+                    alert("Long press image to share");
                 }
             } catch (err) {
-                console.error('Error:', err);
+                console.error(err);
                 alert("Generation failed, please try again");
                 exportContainer.style.display = "none";
             }
         }
 
         function buildDataString() {
-            const startDate = new Date(document.getElementById("date").value);
-            startDate.setDate(startDate.getDate() + 1);
-            const endDate = startDate.toISOString().split('T')[0];
-
+            const date = new Date(document.getElementById("date").value);
+            date.setDate(date.getDate() + 1);
             return [
                 `driver:${document.getElementById("driver").value}`,
                 `plate:${document.getElementById("plate").value}`,
                 `date:${document.getElementById("date").value}`,
                 `start_time:${document.getElementById("start-time").value}`,
-                `end_date:${endDate}`,
+                `end_date:${date.toISOString().split('T')[0]}`,
                 `end_time:${document.getElementById("end-time").value}`,
                 `booker:${document.getElementById("name").value}`,
                 `start_km:${document.getElementById("start-km").value}`,
