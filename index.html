@@ -3,15 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Driving Record QR Generator</title>
+    <title>Anton Oilfield Services DMCC - Driving Record</title>
     <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
         body { 
             font-family: Arial, sans-serif; 
-            max-width: 600px; 
+            max-width: 800px; 
             margin: 20px auto; 
             padding: 20px; 
             background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .company-logo {
+            height: 60px;
+            margin-bottom: 15px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+        }
+        .company-logo:hover {
+            opacity: 0.8;
         }
         .form-group { margin-bottom: 15px; }
         label { 
@@ -35,44 +49,70 @@
             background-size: 12px;
         }
         button { 
-            background-color: #4CAF50; 
+            background-color: #1AAD19; /* 微信绿色 */
             color: white; 
             font-weight: bold; 
             border: none; 
             cursor: pointer; 
             transition: background-color 0.3s;
         }
-        button:hover { background-color: #45a049; }
-        #qrcode, #data-summary { 
-            margin: 20px auto; 
-            text-align: center; 
-            padding: 15px; 
-            background: white; 
-            border-radius: 4px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        #data-summary { 
-            text-align: left;
+        button:hover { background-color: #179B16; }
+        #export-container {
             display: none;
+            margin: 20px auto;
+            gap: 30px;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            align-items: center;
+        }
+        #summary-section {
+            flex: 1;
+            min-width: 300px;
+        }
+        #qrcode-section {
+            flex-shrink: 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
         .summary-item {
-            margin: 10px 0;
-            padding: 10px;
+            margin: 12px 0;
+            padding: 12px;
             background: #f8f9fa;
-            border-radius: 4px;
+            border-radius: 6px;
         }
         .summary-label {
             color: #666;
             font-weight: bold;
             display: inline-block;
-            width: 120px;
+            width: 130px;
+        }
+        @media (max-width: 768px) {
+            #export-container {
+                flex-direction: column;
+                padding: 15px;
+            }
+            #qrcode-section {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <h2>Driving Record Entry</h2>
+    <!-- 公司LOGO -->
+    <div class="header">
+        <a href="https://www.antonoil.com" target="_blank">
+            <img src="https://www.antonoil.com/statics/images/img/logo2021.png" 
+                 class="company-logo" 
+                 alt="Anton Oilfield Services DMCC"
+                 title="Visit official website">
+        </a>
+        <h2>Anton Oilfield Services DMCC Driving System</h2>
+    </div>
 
-    <!-- 司机姓名 -->
+    <!-- 表单字段 -->
     <div class="form-group">
         <label for="driver">Driver Name:</label>
         <select id="driver" required>
@@ -83,13 +123,11 @@
         </select>
     </div>
 
-    <!-- 日期 -->
     <div class="form-group">
         <label for="date">Date:</label>
         <input type="date" id="date" required>
     </div>
 
-    <!-- 车牌 -->
     <div class="form-group">
         <label for="plate">License Plate:</label>
         <select id="plate" required>
@@ -102,31 +140,26 @@
         </select>
     </div>
 
-    <!-- 订车人 -->
     <div class="form-group">
         <label for="name">Booked by:</label>
         <input type="text" id="name" placeholder="e.g., Mr. Zhang" required>
     </div>
 
-    <!-- 出发时间 -->
     <div class="form-group">
         <label for="start-time">Start Time:</label>
         <input type="time" id="start-time" required>
     </div>
 
-    <!-- 出发里程 -->
     <div class="form-group">
         <label for="start-km">Start Odometer (KM):</label>
         <input type="number" id="start-km" placeholder="e.g., 49332" min="0" required>
     </div>
 
-    <!-- 结束时间 -->
     <div class="form-group">
         <label for="end-time">End Time:</label>
         <input type="time" id="end-time" required>
     </div>
 
-    <!-- 结束里程 -->
     <div class="form-group">
         <label for="end-km">End Odometer (KM):</label>
         <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
@@ -134,43 +167,48 @@
 
     <button onclick="generateQR()">Generate QR Code</button>
 
-    <!-- 数据摘要 -->
-    <div id="data-summary">
-        <div class="summary-item">
-            <span class="summary-label">Driver:</span>
-            <span id="show-driver"></span>
+    <!-- 合并显示容器 -->
+    <div id="export-container">
+        <div id="summary-section">
+            <h3 style="margin:0 0 20px 0; color: #2c3e50;">Driving Record Summary</h3>
+            <div class="summary-item">
+                <span class="summary-label">Driver:</span>
+                <span id="show-driver"></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Date:</span>
+                <span id="show-date"></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">License Plate:</span>
+                <span id="show-plate"></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Booked by:</span>
+                <span id="show-booker"></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Start Time:</span>
+                <span id="show-start-time"></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">End Time:</span>
+                <span id="show-end-time"></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Odometer:</span>
+                <span id="show-odo"></span>
+            </div>
         </div>
-        <div class="summary-item">
-            <span class="summary-label">Date:</span>
-            <span id="show-date"></span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">License Plate:</span>
-            <span id="show-plate"></span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Booked by:</span>
-            <span id="show-booker"></span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Start Time:</span>
-            <span id="show-start-time"></span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">End Time:</span>
-            <span id="show-end-time"></span>
-        </div>
-        <div class="summary-item">
-            <span class="summary-label">Odometer:</span>
-            <span id="show-odo"></span>
-        </div>
+        <div id="qrcode-section"></div>
     </div>
 
-    <!-- 二维码 -->
-    <div id="qrcode"></div>
+    <button class="export-btn" onclick="handleWechatShare()">
+        Share via WeChat
+    </button>
 
     <script>
-        // 修复点1：确保车牌手动输入功能正常
+        // 车牌手动输入
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Please enter license plate number:');
@@ -184,12 +222,9 @@
             }
         });
 
-        // 修复点2：完整的生成函数
         function generateQR() {
-            // 清空之前的内容
-            const qrcodeDiv = document.getElementById("qrcode");
-            qrcodeDiv.innerHTML = "";
-            document.getElementById("data-summary").style.display = "none";
+            document.getElementById("export-container").style.display = "none";
+            document.getElementById("qrcode-section").innerHTML = "";
 
             // 数据验证
             const startKm = Number(document.getElementById("start-km").value);
@@ -199,18 +234,13 @@
                 return;
             }
 
-            // 计算结束日期（修复点3：确保日期计算逻辑正确）
             const dateInput = document.getElementById("date").value;
             if (!dateInput) {
                 alert("Please select a date!");
                 return;
             }
-            const startDate = new Date(dateInput);
-            startDate.setDate(startDate.getDate() + 1);
-            const endDate = startDate.toISOString().split('T')[0];
 
-            // 更新数据摘要显示
-            document.getElementById("data-summary").style.display = "block";
+            // 更新数据摘要
             document.getElementById("show-driver").textContent = document.getElementById("driver").value;
             document.getElementById("show-date").textContent = document.getElementById("date").value;
             document.getElementById("show-plate").textContent = document.getElementById("plate").value;
@@ -220,22 +250,9 @@
             document.getElementById("show-odo").textContent = 
                 `${document.getElementById("start-km").value} → ${document.getElementById("end-km").value} KM`;
 
-            // 构建数据字符串
-            const data = [
-                `driver:${document.getElementById("driver").value}`,
-                `plate:${document.getElementById("plate").value}`,
-                `date:${document.getElementById("date").value}`,
-                `start_time:${document.getElementById("start-time").value}`,
-                `end_date:${endDate}`,
-                `end_time:${document.getElementById("end-time").value}`,
-                `booker:${document.getElementById("name").value}`,
-                `start_km:${startKm}`,
-                `end_km:${endKm}`
-            ].join("|");
-
             // 生成二维码
-            new QRCode(qrcodeDiv, {
-                text: data,
+            new QRCode(document.getElementById("qrcode-section"), {
+                text: buildDataString(),
                 width: 200,
                 height: 200,
                 colorDark: "#2c3e50",
@@ -243,8 +260,56 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            // 滚动到结果位置
-            qrcodeDiv.scrollIntoView({ behavior: 'smooth' });
+            document.getElementById("export-container").style.display = "flex";
+            document.getElementById("export-container").scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function buildDataString() {
+            const startDate = new Date(document.getElementById("date").value);
+            startDate.setDate(startDate.getDate() + 1);
+            const endDate = startDate.toISOString().split('T')[0];
+
+            return [
+                `driver:${document.getElementById("driver").value}`,
+                `plate:${document.getElementById("plate").value}`,
+                `date:${document.getElementById("date").value}`,
+                `start_time:${document.getElementById("start-time").value}`,
+                `end_date:${endDate}`,
+                `end_time:${document.getElementById("end-time").value}`,
+                `booker:${document.getElementById("name").value}`,
+                `start_km:${document.getElementById("start-km").value}`,
+                `end_km:${document.getElementById("end-km").value}`
+            ].join("|");
+        }
+
+        function handleWechatShare() {
+            html2canvas(document.querySelector("#export-container"), {
+                backgroundColor: null,
+                useCORS: true,
+                scale: 2
+            }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                
+                if (/MicroMessenger/i.test(navigator.userAgent)) {
+                    // 微信环境显示提示
+                    const img = new Image();
+                    img.src = imgData;
+                    img.style.maxWidth = '100%';
+                    img.style.margin = '20px auto';
+                    img.style.display = 'block';
+                    document.body.appendChild(img);
+                    alert("Long press the image to share");
+                } else {
+                    // 其他浏览器直接下载
+                    const link = document.createElement('a');
+                    link.download = `Anton_Record_${Date.now()}.png`;
+                    link.href = imgData;
+                    link.click();
+                }
+            }).catch(err => {
+                console.error('Error generating image:', err);
+                alert("Failed to generate image. Please try again.");
+            });
         }
     </script>
 </body>
