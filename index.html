@@ -71,12 +71,13 @@
         </select>
     </div>
 
-    <!-- 原有表单字段保持不变 -->
+    <!-- 日期 -->
     <div class="form-group">
         <label for="date">Date:</label>
         <input type="date" id="date" required>
     </div>
 
+    <!-- 车牌 -->
     <div class="form-group">
         <label for="plate">License Plate:</label>
         <select id="plate" required>
@@ -89,10 +90,42 @@
         </select>
     </div>
 
-    <!-- ...其他字段保持不变... -->
+    <!-- 订车人 -->
+    <div class="form-group">
+        <label for="name">Booked by:</label>
+        <input type="text" id="name" placeholder="e.g., Mr. Zhang" required>
+    </div>
+
+    <!-- 出发时间 -->
+    <div class="form-group">
+        <label for="start-time">Start Time:</label>
+        <input type="time" id="start-time" required>
+    </div>
+
+    <!-- 出发里程 -->
+    <div class="form-group">
+        <label for="start-km">Start Odometer (KM):</label>
+        <input type="number" id="start-km" placeholder="e.g., 49332" min="0" required>
+    </div>
+
+    <!-- 结束时间 -->
+    <div class="form-group">
+        <label for="end-time">End Time:</label>
+        <input type="time" id="end-time" required>
+    </div>
+
+    <!-- 结束里程 -->
+    <div class="form-group">
+        <label for="end-km">End Odometer (KM):</label>
+        <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
+    </div>
+
+    <!-- 生成按钮 -->
+    <button onclick="generateQR()">Generate QR Code</button>
+    <div id="qrcode"></div>
 
     <script>
-        // 车牌手动输入处理（保持不变）
+        // 车牌手动输入处理
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Please enter license plate number:');
@@ -106,33 +139,35 @@
             }
         });
 
-        // 生成二维码函数（新增driver字段）
+        // 生成二维码函数
         function generateQR() {
             const qrcodeDiv = document.getElementById("qrcode");
             qrcodeDiv.innerHTML = "";
 
-            // 数据验证
-            if (Number(document.getElementById("end-km").value) <= Number(document.getElementById("start-km").value)) {
+            // 验证里程
+            const startKm = Number(document.getElementById("start-km").value);
+            const endKm = Number(document.getElementById("end-km").value);
+            if (endKm <= startKm) {
                 alert("Error: End odometer must be greater than start odometer!");
                 return;
             }
 
-            // 自动计算结束日期
+            // 计算结束日期
             const startDate = new Date(document.getElementById("date").value);
             startDate.setDate(startDate.getDate() + 1);
             const endDate = startDate.toISOString().split('T')[0];
 
-            // 构建数据字符串（新增driver字段）
+            // 构建数据字符串
             const data = [
-                `driver:${document.getElementById("driver").value}`,  // 新增字段
+                `driver:${document.getElementById("driver").value}`,
                 `plate:${document.getElementById("plate").value}`,
                 `date:${document.getElementById("date").value}`,
                 `start_time:${document.getElementById("start-time").value}`,
                 `end_date:${endDate}`,
                 `end_time:${document.getElementById("end-time").value}`,
                 `booker:${document.getElementById("name").value}`,
-                `start_km:${document.getElementById("start-km").value}`,
-                `end_km:${document.getElementById("end-km").value}`
+                `start_km:${startKm}`,
+                `end_km:${endKm}`
             ].join("|");
 
             // 生成二维码
@@ -145,6 +180,7 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
+            // 滚动到二维码位置
             qrcodeDiv.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
