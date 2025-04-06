@@ -13,9 +13,7 @@
             padding: 20px; 
             background-color: #f5f5f5;
         }
-        .form-group { 
-            margin-bottom: 15px; 
-        }
+        .form-group { margin-bottom: 15px; }
         label { 
             display: block; 
             margin-bottom: 5px; 
@@ -44,10 +42,8 @@
             cursor: pointer; 
             transition: background-color 0.3s;
         }
-        button:hover { 
-            background-color: #45a049; 
-        }
-        #qrcode { 
+        button:hover { background-color: #45a049; }
+        #qrcode, #data-summary { 
             margin: 20px auto; 
             text-align: center; 
             padding: 15px; 
@@ -55,12 +51,28 @@
             border-radius: 4px; 
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+        #data-summary { 
+            text-align: left;
+            display: none;
+        }
+        .summary-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .summary-label {
+            color: #666;
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+        }
     </style>
 </head>
 <body>
     <h2>Driving Record Entry</h2>
-    
-    <!-- 新增司机姓名下拉菜单 -->
+
+    <!-- 司机姓名 -->
     <div class="form-group">
         <label for="driver">Driver Name:</label>
         <select id="driver" required>
@@ -120,12 +132,45 @@
         <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
     </div>
 
-    <!-- 生成按钮 -->
     <button onclick="generateQR()">Generate QR Code</button>
+
+    <!-- 数据摘要 -->
+    <div id="data-summary">
+        <div class="summary-item">
+            <span class="summary-label">Driver:</span>
+            <span id="show-driver"></span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Date:</span>
+            <span id="show-date"></span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">License Plate:</span>
+            <span id="show-plate"></span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Booked by:</span>
+            <span id="show-booker"></span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Start Time:</span>
+            <span id="show-start-time"></span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">End Time:</span>
+            <span id="show-end-time"></span>
+        </div>
+        <div class="summary-item">
+            <span class="summary-label">Odometer:</span>
+            <span id="show-odo"></span>
+        </div>
+    </div>
+
+    <!-- 二维码 -->
     <div id="qrcode"></div>
 
     <script>
-        // 车牌手动输入处理
+        // 修复点1：确保车牌手动输入功能正常
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Please enter license plate number:');
@@ -139,12 +184,14 @@
             }
         });
 
-        // 生成二维码函数
+        // 修复点2：完整的生成函数
         function generateQR() {
+            // 清空之前的内容
             const qrcodeDiv = document.getElementById("qrcode");
             qrcodeDiv.innerHTML = "";
+            document.getElementById("data-summary").style.display = "none";
 
-            // 验证里程
+            // 数据验证
             const startKm = Number(document.getElementById("start-km").value);
             const endKm = Number(document.getElementById("end-km").value);
             if (endKm <= startKm) {
@@ -152,10 +199,26 @@
                 return;
             }
 
-            // 计算结束日期
-            const startDate = new Date(document.getElementById("date").value);
+            // 计算结束日期（修复点3：确保日期计算逻辑正确）
+            const dateInput = document.getElementById("date").value;
+            if (!dateInput) {
+                alert("Please select a date!");
+                return;
+            }
+            const startDate = new Date(dateInput);
             startDate.setDate(startDate.getDate() + 1);
             const endDate = startDate.toISOString().split('T')[0];
+
+            // 更新数据摘要显示
+            document.getElementById("data-summary").style.display = "block";
+            document.getElementById("show-driver").textContent = document.getElementById("driver").value;
+            document.getElementById("show-date").textContent = document.getElementById("date").value;
+            document.getElementById("show-plate").textContent = document.getElementById("plate").value;
+            document.getElementById("show-booker").textContent = document.getElementById("name").value;
+            document.getElementById("show-start-time").textContent = document.getElementById("start-time").value;
+            document.getElementById("show-end-time").textContent = document.getElementById("end-time").value;
+            document.getElementById("show-odo").textContent = 
+                `${document.getElementById("start-km").value} → ${document.getElementById("end-km").value} KM`;
 
             // 构建数据字符串
             const data = [
@@ -180,7 +243,7 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
-            // 滚动到二维码位置
+            // 滚动到结果位置
             qrcodeDiv.scrollIntoView({ behavior: 'smooth' });
         }
     </script>
