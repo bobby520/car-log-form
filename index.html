@@ -19,8 +19,9 @@
             margin-bottom: 20px;
         }
         .company-logo {
-            height: 30px;
+            height: 40px;
             margin-bottom: 8px;
+            object-fit: contain;
         }
         .form-section {
             background: white;
@@ -67,6 +68,7 @@
             height: 35px;
             margin: 0 auto 10px;
             display: block;
+            object-fit: contain;
         }
         .export-title {
             text-align: center;
@@ -110,7 +112,7 @@
 </head>
 <body>
     <div class="header">
-        <img src="https://www.antonoil.com/statics/images/img/logo2021.png" 
+        <img src="https://cdn.jsdelivr.net/gh/bobby520/car-log-form@main/company-logo.png"
              class="company-logo" 
              alt="Company Logo">
         <h2>Anton Oilfield Services DMCC Driving System</h2>
@@ -172,7 +174,7 @@
     </div>
 
     <div id="export-container">
-        <img src="https://www.antonoil.com/statics/images/img/logo2021.png" 
+        <img src="https://cdn.jsdelivr.net/gh/bobby520/car-log-form@main/company-logo.png"
              class="export-logo"
              alt="Company Logo">
         <div class="export-title">Driving Record Summary</div>
@@ -213,6 +215,7 @@
     <script>
         let generatedImageElement = null;
 
+        // 车牌手动输入功能
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Enter license plate:');
@@ -226,6 +229,7 @@
             }
         });
 
+        // 数据同步到预览区域
         function syncFormData() {
             document.getElementById('show-driver').textContent = document.getElementById('driver').value;
             document.getElementById('show-date').textContent = document.getElementById('date').value;
@@ -237,9 +241,12 @@
                 `${document.getElementById('start-km').value} → ${document.getElementById('end-km').value} KM`;
         }
 
+        // 生成并分享图片
         async function generateAndShare() {
             const startKm = +document.getElementById("start-km").value;
             const endKm = +document.getElementById("end-km").value;
+            
+            // 验证表单数据
             if (endKm <= startKm) {
                 alert("Error: End odometer must be greater than start!");
                 return;
@@ -251,11 +258,10 @@
 
             syncFormData();
 
+            // 生成二维码
             const qrcodeDiv = document.getElementById("qrcode-section");
             qrcodeDiv.innerHTML = "";
-            
             await new Promise(resolve => requestAnimationFrame(resolve));
-            
             new QRCode(qrcodeDiv, {
                 text: buildDataString(),
                 width: 150,
@@ -265,32 +271,40 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
+            // 等待二维码渲染
             await new Promise(resolve => setTimeout(resolve, 300));
 
+            // 生成图片
             const exportContainer = document.getElementById("export-container");
             exportContainer.style.display = "flex";
             
             try {
                 const canvas = await html2canvas(exportContainer, {
                     useCORS: true,
+                    allowTaint: false,
                     scale: 1,
                     width: 320,
                     windowWidth: 320,
                     logging: true,
                     onclone: (clonedDoc) => {
                         clonedDoc.getElementById('export-container').style.display = 'flex';
+                        // 强制刷新图片缓存
+                        clonedDoc.querySelectorAll('img').forEach(img => {
+                            img.src = img.src.split('?')[0] + '?t=' + Date.now();
+                        });
                     }
                 });
 
                 exportContainer.style.display = "none";
 
+                // 显示生成的图片
                 if (generatedImageElement) generatedImageElement.remove();
-
                 generatedImageElement = document.createElement('img');
                 generatedImageElement.src = canvas.toDataURL();
                 generatedImageElement.id = 'generated-image';
                 document.body.appendChild(generatedImageElement);
 
+                // 自动下载（非微信环境）
                 if (!/MicroMessenger/i.test(navigator.userAgent)) {
                     const link = document.createElement('a');
                     link.download = `Driving_Record_${Date.now()}.png`;
@@ -306,6 +320,7 @@
             }
         }
 
+        // 构建二维码数据字符串
         function buildDataString() {
             const date = new Date(document.getElementById("date").value);
             date.setDate(date.getDate() + 1);
