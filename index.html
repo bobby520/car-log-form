@@ -16,78 +16,92 @@
         }
         .header {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         .company-logo {
-            height: 40px;
-            margin-bottom: 10px;
+            height: 30px;
+            width: auto;
+            margin-bottom: 8px;
             cursor: pointer;
             transition: opacity 0.3s;
         }
         .company-logo:hover {
             opacity: 0.8;
         }
-        .form-group { margin-bottom: 15px; }
+        h2 {
+            font-size: 1.3em;
+            margin: 0;
+            color: #333;
+        }
+        .form-group { 
+            margin-bottom: 12px; 
+        }
         label { 
             display: block; 
-            margin-bottom: 5px; 
+            margin-bottom: 4px; 
             font-weight: bold; 
-            color: #333;
+            color: #444;
+            font-size: 0.95em;
         }
         input, select, button { 
             width: 100%; 
-            padding: 10px; 
-            margin-bottom: 15px; 
+            padding: 8px; 
+            margin-bottom: 12px; 
             border: 1px solid #ddd; 
-            border-radius: 4px; 
+            border-radius: 3px; 
             box-sizing: border-box;
+            font-size: 0.95em;
         }
         select {
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23333"><path d="M7 10l5 5 5-5z"/></svg>');
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23444"><path d="M7 10l5 5 5-5z"/></svg>');
             background-repeat: no-repeat;
-            background-position: right 10px center;
-            background-size: 12px;
+            background-position: right 8px center;
+            background-size: 10px;
         }
         button { 
-            background-color: #1AAD19; /* 微信绿色 */
+            background-color: #1AAD19;
             color: white; 
             font-weight: bold; 
             border: none; 
             cursor: pointer; 
             transition: background-color 0.3s;
+            padding: 10px 0;
         }
-        button:hover { background-color: #179B16; }
+        button:hover { 
+            background-color: #179B16; 
+        }
         #export-container {
             display: none;
-            margin: 20px auto;
-            gap: 30px;
+            margin: 15px auto;
+            gap: 20px;
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             align-items: center;
         }
         #summary-section {
             flex: 1;
-            min-width: 300px;
+            min-width: 280px;
         }
         #qrcode-section {
             flex-shrink: 0;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        .summary-item {
-            margin: 12px 0;
             padding: 12px;
             background: #f8f9fa;
             border-radius: 6px;
+        }
+        .summary-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
         }
         .summary-label {
             color: #666;
             font-weight: bold;
             display: inline-block;
-            width: 130px;
+            width: 120px;
+            font-size: 0.9em;
         }
         @media (max-width: 768px) {
             #export-container {
@@ -112,7 +126,7 @@
         <h2>Anton Oilfield Services DMCC Driving System</h2>
     </div>
 
-    <!-- 表单字段 -->
+    <!-- 完整表单字段 -->
     <div class="form-group">
         <label for="driver">Driver Name:</label>
         <select id="driver" required>
@@ -167,7 +181,7 @@
 
     <button onclick="generateQR()">Generate QR Code</button>
 
-    <!-- 合并显示容器 -->
+    <!-- 数据展示区 -->
     <div id="export-container">
         <div id="summary-section">
             <h3 style="margin:0 0 20px 0; color: #2c3e50;">Driving Record Summary</h3>
@@ -208,7 +222,7 @@
     </button>
 
     <script>
-        // 车牌手动输入
+        // 车牌手动输入功能
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Please enter license plate number:');
@@ -222,7 +236,9 @@
             }
         });
 
+        // 生成二维码函数
         function generateQR() {
+            // 清空旧内容
             document.getElementById("export-container").style.display = "none";
             document.getElementById("qrcode-section").innerHTML = "";
 
@@ -260,10 +276,12 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
 
+            // 显示结果区域
             document.getElementById("export-container").style.display = "flex";
             document.getElementById("export-container").scrollIntoView({ behavior: 'smooth' });
         }
 
+        // 构建数据字符串
         function buildDataString() {
             const startDate = new Date(document.getElementById("date").value);
             startDate.setDate(startDate.getDate() + 1);
@@ -282,6 +300,7 @@
             ].join("|");
         }
 
+        // 微信分享处理
         function handleWechatShare() {
             html2canvas(document.querySelector("#export-container"), {
                 backgroundColor: null,
@@ -291,7 +310,7 @@
                 const imgData = canvas.toDataURL('image/png');
                 
                 if (/MicroMessenger/i.test(navigator.userAgent)) {
-                    // 微信环境显示提示
+                    // 微信环境显示图片供长按分享
                     const img = new Image();
                     img.src = imgData;
                     img.style.maxWidth = '100%';
