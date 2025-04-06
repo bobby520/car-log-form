@@ -93,6 +93,18 @@
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
+        .summary-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .summary-label {
+            color: #666;
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+        }
     </style>
 </head>
 <body>
@@ -206,12 +218,25 @@
                 const manualPlate = prompt('Enter license plate:');
                 if (manualPlate) {
                     const newOption = document.createElement('option');
-                    newOption.value = newOption.textContent = manualPlate;
+                    newOption.value = manualPlate;
+                    newOption.textContent = manualPlate;
                     this.appendChild(newOption);
                     this.value = manualPlate;
                 }
             }
         });
+
+        // 数据同步函数
+        function syncFormData() {
+            document.getElementById('show-driver').textContent = document.getElementById('driver').value;
+            document.getElementById('show-date').textContent = document.getElementById('date').value;
+            document.getElementById('show-plate').textContent = document.getElementById('plate').value;
+            document.getElementById('show-booker').textContent = document.getElementById('name').value;
+            document.getElementById('show-start-time').textContent = document.getElementById('start-time').value;
+            document.getElementById('show-end-time').textContent = document.getElementById('end-time').value;
+            document.getElementById('show-odo').textContent = 
+                `${document.getElementById('start-km').value} → ${document.getElementById('end-km').value} KM`;
+        }
 
         async function generateAndShare() {
             // 数据验证
@@ -226,17 +251,16 @@
                 return;
             }
 
-            // 更新显示数据
-            document.querySelectorAll('[id^="show-"]').forEach(el => {
-                const field = el.id.replace('show-', '');
-                el.textContent = document.getElementById(field).value;
-            });
-            document.getElementById("show-odo").textContent = 
-                `${document.getElementById("start-km").value} → ${document.getElementById("end-km").value} KM`;
+            // 同步表单数据到预览区域
+            syncFormData();
 
             // 生成二维码
             const qrcodeDiv = document.getElementById("qrcode-section");
             qrcodeDiv.innerHTML = "";
+            
+            // 确保DOM更新
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            
             new QRCode(qrcodeDiv, {
                 text: buildDataString(),
                 width: 200,
@@ -245,6 +269,9 @@
                 colorLight: "#ffffff",
                 correctLevel: QRCode.CorrectLevel.H
             });
+
+            // 等待二维码渲染
+            await new Promise(resolve => setTimeout(resolve, 300));
 
             // 显示临时容器
             const exportContainer = document.getElementById("export-container");
@@ -255,7 +282,10 @@
                 const canvas = await html2canvas(exportContainer, {
                     useCORS: true,
                     scale: 2,
-                    logging: true
+                    logging: true,
+                    onclone: (clonedDoc) => {
+                        clonedDoc.getElementById('export-container').style.display = 'flex';
+                    }
                 });
 
                 // 隐藏临时容器
