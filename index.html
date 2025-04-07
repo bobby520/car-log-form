@@ -306,15 +306,22 @@
         }
 
         function buildDataString() {
-            const date = new Date(document.getElementById("date").value);
-            date.setDate(date.getDate() + 1);
+            const startTime = document.getElementById("start-time").value;
+            const endTime = document.getElementById("end-time").value;
+            const endDate = new Date(document.getElementById("date").value);
+
+            // 智能日期处理
+            if (endTime < startTime) {
+                endDate.setDate(endDate.getDate() + 1);
+            }
+
             return [
                 `driver:${document.getElementById("driver").value}`,
                 `plate:${document.getElementById("plate").value}`,
                 `date:${document.getElementById("date").value}`,
-                `start_time:${document.getElementById("start-time").value}`,
-                `end_date:${date.toISOString().split('T')[0]}`,
-                `end_time:${document.getElementById("end-time").value}`,
+                `start_time:${startTime}`,
+                `end_date:${endDate.toISOString().split('T')[0]}`,
+                `end_time:${endTime}`,
                 `booker:${document.getElementById("name").value}`,
                 `start_km:${document.getElementById("start-km").value}`,
                 `end_km:${document.getElementById("end-km").value}`
