@@ -276,7 +276,7 @@
     <script>
         let generatedImageElement = null;
 
-        // Initialize date with local timezone
+        // 初始化日期
         document.addEventListener('DOMContentLoaded', function() {
             const dateInput = document.getElementById('date');
             const now = new Date();
@@ -284,7 +284,7 @@
             dateInput.value = localDate.toISOString().substring(0, 10);
         });
 
-        // License plate manual input
+        // 车牌手动输入
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Enter license plate:');
@@ -298,7 +298,7 @@
             }
         });
 
-        // Accurate overtime calculation
+        // 修正的加班计算函数
         function calculateOvertime() {
             const start = document.getElementById('start-time').value;
             const end = document.getElementById('end-time').value;
@@ -337,11 +337,12 @@
                     amount: +(hours * rate).toFixed(2)
                 });
             } else {
-                // Early overtime
-                if (startDateTime.getHours() < NORMAL_START) {
-                    const endEarly = new Date(startDateTime);
-                    endEarly.setHours(NORMAL_START, 0, 0, 0);
-                    const hours = calculateHours(startDateTime, endEarly);
+                // 早加班计算修正
+                const endEarly = new Date(startDateTime);
+                endEarly.setHours(NORMAL_START, 0, 0, 0);
+                const earlyEnd = endDateTime < endEarly ? endDateTime : endEarly;
+                if (startDateTime < earlyEnd) {
+                    const hours = calculateHours(startDateTime, earlyEnd);
                     if (hours > 0) {
                         overtime.breakdown.push({
                             type: 'Early Overtime',
@@ -352,11 +353,12 @@
                     }
                 }
 
-                // Late overtime
-                if (endDateTime.getHours() >= NORMAL_END || endDateTime.getDate() !== startDateTime.getDate()) {
-                    const startLate = new Date(endDateTime);
-                    startLate.setHours(NORMAL_END, 0, 0, 0);
-                    const hours = calculateHours(startLate, endDateTime);
+                // 晚加班计算修正
+                const startLate = new Date(startDateTime);
+                startLate.setHours(NORMAL_END, 0, 0, 0);
+                const lateStart = startDateTime > startLate ? startDateTime : startLate;
+                if (endDateTime > lateStart) {
+                    const hours = calculateHours(lateStart, endDateTime);
                     if (hours > 0) {
                         overtime.breakdown.push({
                             type: 'Late Overtime',
@@ -373,7 +375,7 @@
             return overtime;
         }
 
-        // Sync form data to preview
+        // 同步表单数据
         function syncFormData() {
             document.getElementById('show-driver').textContent = document.getElementById('driver').value;
             document.getElementById('show-date').textContent = document.getElementById('date').value;
@@ -407,7 +409,7 @@
             document.getElementById('show-total').textContent = `${totalCost.toFixed(2)} AED`;
         }
 
-        // Generate and export
+        // 生成二维码和截图
         async function generateAndShare() {
             const startKm = +document.getElementById("start-km").value;
             const endKm = +document.getElementById("end-km").value;
@@ -469,7 +471,7 @@
             }
         }
 
-        // Build QR data
+        // 构建二维码数据字符串
         function buildDataString() {
             const overtime = calculateOvertime();
             const date = new Date(document.getElementById('date').value);
@@ -497,7 +499,7 @@
             ].join("|");
         }
 
-        // Event listeners
+        // 事件监听
         document.getElementById('start-time').addEventListener('change', syncFormData);
         document.getElementById('end-time').addEventListener('change', syncFormData);
         document.getElementById('date').addEventListener('change', syncFormData);
