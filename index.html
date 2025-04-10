@@ -1,25 +1,277 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- 保持原有样式不变 -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anton Oilfield Services DMCC - Driving Record</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
     <style>
-        /* 原有样式保持不变 */
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 800px; 
+            margin: 20px auto; 
+            padding: 20px; 
+            background-color: #f5f5f5;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .company-logo {
+            height: 30px;
+            margin-bottom: 8px;
+        }
+        .form-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group { 
+            margin-bottom: 12px; 
+        }
+        label { 
+            display: block; 
+            margin-bottom: 4px; 
+            font-weight: bold; 
+            color: #444;
+        }
+        input, select, button { 
+            width: 100%; 
+            padding: 8px; 
+            margin-bottom: 12px; 
+            border: 1px solid #ddd; 
+            border-radius: 3px; 
+            box-sizing: border-box;
+        }
+        button { 
+            background-color: #1AAD19;
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            padding: 10px 0;
+        }
+        #export-container {
+            display: none;
+            width: 360px;
+            margin: 15px auto;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            flex-direction: column;
+        }
+        .export-logo {
+            height: 30px;
+            margin: 0 auto 10px;
+            display: block;
+        }
+        .export-title {
+            text-align: center;
+            font-size: 1em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        #qrcode-section {
+            text-align: center;
+            margin-top: 15px;
+            padding: 10px;
+        }
+        #qrcode-section canvas {
+            width: 150px !important;
+            height: 150px !important;
+        }
+        #generated-image {
+            max-width: 360px;
+            margin: 20px auto;
+            display: block;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .summary-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .summary-label {
+            color: #666;
+            font-weight: bold;
+            display: inline-block;
+            width: 100px;
+        }
+        .total-cost {
+            background: #e3f2fd !important;
+            font-weight: bold;
+            border: 1px solid #bbdefb;
+        }
+        .overtime-details {
+            background: #fff3e0;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .overtime-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+        }
+        .save-status {
+            color: #666;
+            font-size: 0.9em;
+            text-align: center;
+            height: 20px;
+            margin-top: 10px;
+        }
+        #manual-save {
+            background-color: #2196F3;
+            margin-top: 10px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        @media (max-width: 480px) {
+            .form-group input {
+                font-size: 14px;
+            }
+            .summary-label {
+                width: 90px;
+            }
+            .button-group {
+                flex-direction: column;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- 保持HTML结构不变 -->
+    <div class="header">
+        <img src="https://raw.githubusercontent.com/bobby520/car-log-form/main/company-logo.png"
+             class="company-logo" 
+             alt="Company Logo">
+        <h2>Anton Oilfield Services DMCC Driving System</h2>
+    </div>
+
+    <div class="form-section">
+        <div class="form-group">
+            <label>Driver Name:</label>
+            <select id="driver" required>
+                <option value="" disabled selected>Select Driver</option>
+                <option value="Mudassar">Mudassar</option>
+                <option value="Yusuf">Yusuf</option>
+                <option value="Malik">Malik</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Date:</label>
+            <input type="date" id="date" required>
+        </div>
+
+        <div class="form-group">
+            <label>License Plate:</label>
+            <select id="plate" required>
+                <option value="" disabled selected>Select Vehicle</option>
+                <option value="F24345">F24345</option>
+                <option value="N75133">N75132</option>
+                <option value="M92098">M92098</option>
+                <option value="T71027">T71027</option>
+                <option value="Other">Other (Manual Input)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Booked by:</label>
+            <input type="text" id="name" placeholder="e.g., Mr. Zhang" required>
+        </div>
+
+        <div class="form-group">
+            <label>Start Time:</label>
+            <input type="time" id="start-time" required>
+        </div>
+
+        <div class="form-group">
+            <label>Start Odometer (KM):</label>
+            <input type="number" id="start-km" placeholder="e.g., 49332" min="0" required>
+        </div>
+
+        <div class="form-group">
+            <label>End Time:</label>
+            <input type="time" id="end-time" required>
+        </div>
+
+        <div class="form-group">
+            <label>End Odometer (KM):</label>
+            <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
+        </div>
+
+        <div class="form-group">
+            <label>Fuel Cost (AED):</label>
+            <input type="number" id="fuel" min="0" step="5" required>
+        </div>
+
+        <div class="form-group">
+            <label>Parking Fee (AED):</label>
+            <input type="number" id="parking" min="0" step="5" required>
+        </div>
+
+        <div class="form-group">
+            <label>Taxi Fare (AED):</label>
+            <input type="number" id="taxi" min="0" step="5" required>
+        </div>
+
+        <div class="button-group">
+            <button onclick="generateAndShare()">Generate QR Code</button>
+            <button id="manual-save" onclick="manualSave()">Manual Save</button>
+        </div>
+        <div class="save-status" id="save-status"></div>
+    </div>
+
+    <div id="export-container">
+        <img src="https://raw.githubusercontent.com/bobby520/car-log-form/main/company-logo.png"
+             class="export-logo"
+             alt="Company Logo">
+        <div class="export-title">Driving Record Summary</div>
+        
+        <div id="summary-section">
+            <!-- 保持原有摘要内容不变 -->
+        </div>
+        <div id="qrcode-section"></div>
+    </div>
 
     <script>
-        // 修复后的核心代码部分
+        let generatedImageElement = null;
         let currentDriver = '';
         const DRAFT_PREFIX = 'driving_draft_';
         let saveTimer = null;
 
-        // 增强版自动保存（添加微信兼容处理）
+        function showSaveStatus(message) {
+            const statusEl = document.getElementById('save-status');
+            statusEl.textContent = message;
+            setTimeout(() => {
+                statusEl.textContent = '';
+            }, 2000);
+        }
+
         function autoSaveDraft() {
             if (!currentDriver) return;
             
-            // 收集所有数据（包含空值处理）
+            try {
+                // 存储可用性检查
+                localStorage.setItem('storage_test', 'test');
+                localStorage.removeItem('storage_test');
+            } catch (e) {
+                showSaveStatus('Storage unavailable!');
+                return;
+            }
+
             const draftData = {
                 date: document.getElementById('date').value || '',
                 plate: document.getElementById('plate').value || '',
@@ -34,16 +286,23 @@
             };
 
             try {
-                // 添加微信浏览器存储异常处理
                 localStorage.setItem(`${DRAFT_PREFIX}${currentDriver}`, JSON.stringify(draftData));
-                console.log('自动保存成功:', draftData);
+                showSaveStatus(`Autosaved at ${new Date().toLocaleTimeString()}`);
             } catch (e) {
-                console.error('存储失败:', e);
-                alert('自动保存失败，请检查浏览器存储权限');
+                showSaveStatus('Save failed!');
+                console.error('Storage error:', e);
             }
         }
 
-        // 优化后的加载逻辑
+        function manualSave() {
+            if (!document.getElementById('driver').value) {
+                alert('Please select a driver first');
+                return;
+            }
+            autoSaveDraft();
+            showSaveStatus('Manual save successful!');
+        }
+
         function loadDraft() {
             if (!currentDriver) return;
             
@@ -52,8 +311,6 @@
                 if (!draft) return;
 
                 const data = JSON.parse(draft);
-                
-                // 智能填充逻辑（仅填充空字段）
                 const fields = [
                     ['date', data.date],
                     ['plate', data.plate],
@@ -71,27 +328,54 @@
                     const el = document.getElementById(id);
                     if (el && !el.value) el.value = value;
                 });
-
-                console.log('草稿加载成功:', data);
             } catch (e) {
-                console.error('加载失败:', e);
+                console.error('Load error:', e);
             }
         }
 
-        // 增强的事件监听（兼容微信输入法）
-        function setupEventListeners() {
-            // 司机切换监听
-            document.getElementById('driver').addEventListener('change', function() {
-                if (currentDriver) autoSaveDraft();
-                currentDriver = this.value;
-                loadDraft();
-                syncFormData();
+        document.getElementById('driver').addEventListener('change', function() {
+            if (currentDriver) autoSaveDraft();
+            currentDriver = this.value;
+            loadDraft();
+            syncFormData();
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('date');
+            if (!dateInput.value) {
+                const now = new Date();
+                dateInput.value = now.toISOString().split('T')[0];
+            }
+
+            const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+            if (isWeChat) {
+                alert('WeChat User Tip: Please ensure storage permissions are enabled');
+            }
+
+            // 初始化事件监听
+            const inputs = document.querySelectorAll('input, select');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => {
+                    if (saveTimer) clearTimeout(saveTimer);
+                    saveTimer = setTimeout(() => {
+                        if (currentDriver) {
+                            autoSaveDraft();
+                            syncFormData();
+                        }
+                    }, 800);
+                });
+                
+                input.addEventListener('blur', () => {
+                    if (currentDriver) {
+                        autoSaveDraft();
+                        syncFormData();
+                    }
+                });
             });
 
-            // 车牌输入特殊处理
             document.getElementById('plate').addEventListener('change', function() {
                 if (this.value === 'Other') {
-                    const manualPlate = prompt('输入车牌号:');
+                    const manualPlate = prompt('Enter license plate:');
                     if (manualPlate) {
                         const exists = Array.from(this.options).some(opt => opt.value === manualPlate);
                         if (!exists) {
@@ -103,48 +387,6 @@
                 }
                 autoSaveDraft();
             });
-
-            // 通用输入监听（添加防抖）
-            const inputs = document.querySelectorAll('input, select');
-            inputs.forEach(input => {
-                input.addEventListener('input', () => {
-                    if (saveTimer) clearTimeout(saveTimer);
-                    saveTimer = setTimeout(() => {
-                        if (currentDriver) autoSaveDraft();
-                        syncFormData();
-                    }, 800);
-                });
-                
-                // 添加blur事件确保保存
-                input.addEventListener('blur', () => {
-                    if (currentDriver) autoSaveDraft();
-                });
-            });
-        }
-
-        // 初始化（添加微信环境检测）
-        document.addEventListener('DOMContentLoaded', function() {
-            // 初始化日期
-            const dateInput = document.getElementById('date');
-            if (!dateInput.value) {
-                const now = new Date();
-                dateInput.value = now.toISOString().split('T')[0];
-            }
-
-            // 初始化司机
-            const driverSelect = document.getElementById('driver');
-            driverSelect.addEventListener('change', syncFormData);
-            currentDriver = driverSelect.value;
-            
-            // 微信环境特殊处理
-            const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
-            if (isWeChat) {
-                alert('微信用户提示：请确保已启用存储权限\n建议使用系统浏览器获得最佳体验');
-            }
-
-            setupEventListeners();
-            loadDraft();
-            syncFormData();
         });
 
         // 保持原有业务逻辑函数不变
@@ -152,6 +394,14 @@
         function syncFormData() { /* 保持不变 */ }
         function generateAndShare() { /* 保持不变 */ }
         function buildDataString() { /* 保持不变 */ }
+
+        // 初始化剩余事件监听
+        document.getElementById('start-time').addEventListener('change', syncFormData);
+        document.getElementById('end-time').addEventListener('change', syncFormData);
+        document.getElementById('date').addEventListener('change', syncFormData);
+        document.getElementById('fuel').addEventListener('input', syncFormData);
+        document.getElementById('parking').addEventListener('input', syncFormData);
+        document.getElementById('taxi').addEventListener('input', syncFormData);
     </script>
 </body>
 </html>
