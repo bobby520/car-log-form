@@ -275,25 +275,54 @@
   </div>
 
   <script>
-    // 新增：从本地存储加载草稿
-    function loadDraft() {
-      const draft = JSON.parse(localStorage.getItem('carLogDraft'));
-      if (draft) {
-        document.getElementById('driver').value = draft.driver || '';
-        document.getElementById('date').value = draft.date || '';
-        document.getElementById('plate').value = draft.plate || '';
-        document.getElementById('name').value = draft.name || '';
-        document.getElementById('start-time').value = draft.startTime || '';
-        document.getElementById('start-km').value = draft.startKm || '';
-        document.getElementById('end-time').value = draft.endTime || '';
-        document.getElementById('end-km').value = draft.endKm || '';
-        document.getElementById('fuel').value = draft.fuel || '';
-        document.getElementById('parking').value = draft.parking || '';
-        document.getElementById('taxi').value = draft.taxi || '';
+    function generateAndShare() {
+      // 获取表单数据
+      const driver = document.getElementById('driver').value;
+      const date = document.getElementById('date').value;
+      const plate = document.getElementById('plate').value;
+      const name = document.getElementById('name').value;
+      const startTime = document.getElementById('start-time').value;
+      const startKm = document.getElementById('start-km').value;
+      const endTime = document.getElementById('end-time').value;
+      const endKm = document.getElementById('end-km').value;
+      const fuel = document.getElementById('fuel').value;
+      const parking = document.getElementById('parking').value;
+      const taxi = document.getElementById('taxi').value;
+
+      // 验证表单填写情况
+      if (!driver || !date || !plate || !name || !startTime || !startKm || !endTime || !endKm || !fuel || !parking || !taxi) {
+        alert('Please complete all fields!');
+        return;
       }
+
+      // 计算总费用
+      const totalCost = (parseFloat(fuel) || 0) + (parseFloat(parking) || 0) + (parseFloat(taxi) || 0);
+
+      // 填充 summary 信息
+      document.getElementById('show-driver').innerText = driver;
+      document.getElementById('show-date').innerText = date;
+      document.getElementById('show-plate').innerText = plate;
+      document.getElementById('show-booker').innerText = name;
+      document.getElementById('show-start-time').innerText = startTime;
+      document.getElementById('show-end-time').innerText = endTime;
+      document.getElementById('show-odo').innerText = `${startKm} - ${endKm} KM`;
+      document.getElementById('show-fuel').innerText = `${fuel} AED`;
+      document.getElementById('show-parking').innerText = `${parking} AED`;
+      document.getElementById('show-taxi').innerText = `${taxi} AED`;
+      document.getElementById('show-total').innerText = `${totalCost.toFixed(2)} AED`;
+
+      // 生成二维码内容
+      const qrCodeData = `Driver: ${driver}|Date: ${date}|Plate: ${plate}|Name: ${name}|Start: ${startTime}|End: ${endTime}|Odometer: ${startKm} - ${endKm}|Fuel: ${fuel}|Parking: ${parking}|Taxi: ${taxi}`;
+      const qrcode = new QRCode(document.getElementById("qrcode-section"), {
+        text: qrCodeData,
+        width: 150,
+        height: 150
+      });
+
+      // 显示总结和二维码
+      document.getElementById("export-container").style.display = "block";
     }
 
-    // 保存草稿到本地存储
     function saveDraft() {
       const draft = {
         driver: document.getElementById('driver').value,
@@ -312,11 +341,23 @@
       alert('Draft saved!');
     }
 
-    // 在页面加载时加载草稿
-    document.addEventListener('DOMContentLoaded', loadDraft);
-
-    // 同步表单数据和其他功能
-    // (保持原来的同步和计算逻辑)
+    // 页面加载时加载草稿
+    document.addEventListener('DOMContentLoaded', function() {
+      const draft = JSON.parse(localStorage.getItem('carLogDraft'));
+      if (draft) {
+        document.getElementById('driver').value = draft.driver || '';
+        document.getElementById('date').value = draft.date || '';
+        document.getElementById('plate').value = draft.plate || '';
+        document.getElementById('name').value = draft.name || '';
+        document.getElementById('start-time').value = draft.startTime || '';
+        document.getElementById('start-km').value = draft.startKm || '';
+        document.getElementById('end-time').value = draft.endTime || '';
+        document.getElementById('end-km').value = draft.endKm || '';
+        document.getElementById('fuel').value = draft.fuel || '';
+        document.getElementById('parking').value = draft.parking || '';
+        document.getElementById('taxi').value = draft.taxi || '';
+      }
+    });
   </script>
 </body>
 </html>
