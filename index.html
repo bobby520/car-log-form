@@ -193,6 +193,7 @@
             <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
         </div>
 
+        <!-- 费用输入顺序调整 -->
         <div class="form-group">
             <label>Fuel Cost (AED):</label>
             <input type="number" id="fuel" min="0" step="5" required>
@@ -201,6 +202,17 @@
         <div class="form-group">
             <label>Parking Fee (AED):</label>
             <input type="number" id="parking" min="0" step="5" required>
+        </div>
+
+        <!-- 新增洗车费和维修费 -->
+        <div class="form-group">
+            <label>Car Wash Fee (AED):</label>
+            <input type="number" id="car-wash" min="0" step="5" required>
+        </div>
+
+        <div class="form-group">
+            <label>Maintenance Fee (AED):</label>
+            <input type="number" id="maintenance" min="0" step="5" required>
         </div>
 
         <div class="form-group">
@@ -246,6 +258,8 @@
                 <span class="summary-label">Odometer:</span>
                 <span id="show-odo"></span>
             </div>
+
+            <!-- 费用显示顺序调整 -->
             <div class="summary-item">
                 <span class="summary-label">Fuel Cost:</span>
                 <span id="show-fuel"></span>
@@ -255,9 +269,18 @@
                 <span id="show-parking"></span>
             </div>
             <div class="summary-item">
+                <span class="summary-label">Car Wash:</span>
+                <span id="show-carwash"></span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Maintenance:</span>
+                <span id="show-maintenance"></span>
+            </div>
+            <div class="summary-item">
                 <span class="summary-label">Taxi Fare:</span>
                 <span id="show-taxi"></span>
             </div>
+
             <div class="overtime-details">
                 <div class="summary-item">
                     <span class="summary-label">Overtime:</span>
@@ -298,7 +321,7 @@
             }
         });
 
-        // 修正的加班计算函数
+        // 加班计算函数
         function calculateOvertime() {
             const start = document.getElementById('start-time').value;
             const end = document.getElementById('end-time').value;
@@ -337,7 +360,6 @@
                     amount: +(hours * rate).toFixed(2)
                 });
             } else {
-                // 早加班计算修正
                 const endEarly = new Date(startDateTime);
                 endEarly.setHours(NORMAL_START, 0, 0, 0);
                 const earlyEnd = endDateTime < endEarly ? endDateTime : endEarly;
@@ -353,7 +375,6 @@
                     }
                 }
 
-                // 晚加班计算修正
                 const startLate = new Date(startDateTime);
                 startLate.setHours(NORMAL_END, 0, 0, 0);
                 const lateStart = startDateTime > startLate ? startDateTime : startLate;
@@ -386,16 +407,25 @@
             document.getElementById('show-odo').textContent = 
                 `${document.getElementById('start-km').value} → ${document.getElementById('end-km').value} KM`;
 
+            // 获取所有费用值
             const fuel = +document.getElementById('fuel').value || 0;
             const parking = +document.getElementById('parking').value || 0;
+            const carWash = +document.getElementById('car-wash').value || 0;
+            const maintenance = +document.getElementById('maintenance').value || 0;
             const taxi = +document.getElementById('taxi').value || 0;
+
+            // 显示费用
             document.getElementById('show-fuel').textContent = `${fuel} AED`;
             document.getElementById('show-parking').textContent = `${parking} AED`;
+            document.getElementById('show-carwash').textContent = `${carWash} AED`;
+            document.getElementById('show-maintenance').textContent = `${maintenance} AED`;
             document.getElementById('show-taxi').textContent = `${taxi} AED`;
 
+            // 计算加班费
             const overtime = calculateOvertime();
             document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
             
+            // 显示加班明细
             const breakdownDiv = document.getElementById('overtime-breakdown');
             breakdownDiv.innerHTML = overtime.breakdown.map(item => `
                 <div class="overtime-row">
@@ -405,7 +435,8 @@
                 </div>
             `).join('');
 
-            const totalCost = fuel + parking + taxi + overtime.total;
+            // 计算总费用
+            const totalCost = fuel + parking + carWash + maintenance + taxi + overtime.total;
             document.getElementById('show-total').textContent = `${totalCost.toFixed(2)} AED`;
         }
 
@@ -420,8 +451,10 @@
 
             const fuel = +document.getElementById('fuel').value;
             const parking = +document.getElementById('parking').value;
+            const carWash = +document.getElementById('car-wash').value;
+            const maintenance = +document.getElementById('maintenance').value;
             const taxi = +document.getElementById('taxi').value;
-            if(fuel < 0 || parking < 0 || taxi < 0) {
+            if(fuel < 0 || parking < 0 || carWash < 0 || maintenance < 0 || taxi < 0) {
                 alert("Error: Costs cannot be negative!");
                 return;
             }
@@ -471,7 +504,7 @@
             }
         }
 
-        // 构建二维码数据字符串
+        // 构建二维码数据
         function buildDataString() {
             const overtime = calculateOvertime();
             const date = new Date(document.getElementById('date').value);
@@ -487,6 +520,8 @@
                 `end_km:${document.getElementById("end-km").value}`,
                 `fuel_cost:${document.getElementById("fuel").value}`,
                 `parking_fee:${document.getElementById("parking").value}`,
+                `car_wash:${document.getElementById("car-wash").value}`,
+                `maintenance:${document.getElementById("maintenance").value}`,
                 `taxi_fare:${document.getElementById("taxi").value}`,
                 `is_weekend:${[0,6].includes(date.getDay())}`,
                 `overtime_hours:${overtime.breakdown.reduce((sum, item) => sum + parseFloat(item.hours), 0).toFixed(2)}`,
@@ -494,6 +529,8 @@
                 `overtime_amount:${overtime.total}`,
                 `total_cost:${(+document.getElementById("fuel").value + 
                               +document.getElementById("parking").value + 
+                              +document.getElementById("car-wash").value +
+                              +document.getElementById("maintenance").value +
                               +document.getElementById("taxi").value + 
                               overtime.total).toFixed(2)}`
             ].join("|");
@@ -505,6 +542,8 @@
         document.getElementById('date').addEventListener('change', syncFormData);
         document.getElementById('fuel').addEventListener('input', syncFormData);
         document.getElementById('parking').addEventListener('input', syncFormData);
+        document.getElementById('car-wash').addEventListener('input', syncFormData);
+        document.getElementById('maintenance').addEventListener('input', syncFormData);
         document.getElementById('taxi').addEventListener('input', syncFormData);
     </script>
 </body>
