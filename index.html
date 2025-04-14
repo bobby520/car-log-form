@@ -218,7 +218,7 @@
       }
     });
 
-   function calculateOvertime() {
+  function calculateOvertime() {
     const startTimeStr = document.getElementById('start-time').value;
     const endTimeStr = document.getElementById('end-time').value;
     const dateInput = document.getElementById('date').value;
@@ -227,7 +227,7 @@
 
     const startDate = new Date(`${dateInput}T${startTimeStr}`);
     let endDate = new Date(`${dateInput}T${endTimeStr}`);
-    if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1); // 跨天
+    if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1); // 跨天情况
 
     const breakdown = [];
     let total = 0;
@@ -237,21 +237,35 @@
     let current = new Date(startDate);
 
     while (current < endDate) {
-        const nextHour = new Date(current);
+        let nextHour = new Date(current);
         nextHour.setHours(current.getHours() + 1, 0, 0, 0);
-        const segmentEnd = nextHour < endDate ? nextHour : endDate;
+        if (nextHour > endDate) nextHour = new Date(endDate);
 
-        const isWeekend = [0, 6].includes(current.getDay());
-        const hourStart = current.getHours();
-        const hourEnd = segmentEnd.getHours();
-        const isOvertimeHour = isWeekend || hourStart < 8 || hourStart >= 17;
+        const day = current.getDay();
+        const hour = current.getHours();
+        const isWeekend = (day === 0 || day === 6);
 
-        if (isOvertimeHour) {
-            const hours = calcHours(current, segmentEnd);
-            const rate = isWeekend ? 25 : 20;
+        let overtimeType = null;
+        let rate = 0;
+
+        if (isWeekend) {
+            overtimeType = 'Weekend Overtime';
+            rate = 25;
+        } else {
+            if (hour < 8) {
+                overtimeType = 'Early Overtime';
+                rate = 20;
+            } else if (hour >= 17) {
+                overtimeType = 'Late Overtime';
+                rate = 20;
+            }
+        }
+
+        if (overtimeType) {
+            const hours = calcHours(current, nextHour);
             const amount = +(hours * rate).toFixed(2);
             breakdown.push({
-                type: isWeekend ? 'Weekend Overtime' : 'Late Overtime',
+                type: overtimeType,
                 hours: hours.toFixed(2),
                 rate: rate,
                 amount: amount
@@ -259,7 +273,7 @@
             total += amount;
         }
 
-        current = segmentEnd;
+        current = new Date(nextHour);
     }
 
     return {
