@@ -218,39 +218,56 @@
       }
     });
 
-    function calculateOvertime() {
-      const start = document.getElementById('start-time').value;
-      const end = document.getElementById('end-time').value;
-      const dateInput = document.getElementById('date').value;
-      if (!start || !end || !dateInput) return { total: 0, breakdown: [] };
-      const date = new Date(dateInput);
-      const dateStr = date.toISOString().substring(0, 10);
-      const startDateTime = new Date(`${dateStr}T${start}`);
-      let endDateTime = new Date(`${dateStr}T${end}`);
-      if (endDateTime < startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
-      const calcH = (a, b) => Number(((b - a) / 3600000).toFixed(2));
-      const isWeekend = [0, 6].includes(date.getDay());
-      const NORMAL_START = 8, NORMAL_END = 17;
-      let overtime = { total: 0, breakdown: [] };
-      if (isWeekend) {
-        const h = calcH(startDateTime, endDateTime);
-        overtime.total = h * 25;
-        overtime.breakdown.push({ type: 'Weekend Overtime', hours: h.toFixed(2), rate: 25, amount: +(h * 25).toFixed(2) });
-      } else {
-        const early = new Date(startDateTime); early.setHours(NORMAL_START, 0, 0, 0);
-        const late = new Date(startDateTime); late.setHours(NORMAL_END, 0, 0, 0);
-        if (startDateTime < early) {
-          const h = calcH(startDateTime, Math.min(early, endDateTime));
-          if (h > 0) overtime.breakdown.push({ type: 'Early Overtime', hours: h.toFixed(2), rate: 20, amount: +(h * 20).toFixed(2) });
+   function calculateOvertime() {
+    const startTimeStr = document.getElementById('start-time').value;
+    const endTimeStr = document.getElementById('end-time').value;
+    const dateInput = document.getElementById('date').value;
+
+    if (!startTimeStr || !endTimeStr || !dateInput) return { total: 0, breakdown: [] };
+
+    const startDate = new Date(`${dateInput}T${startTimeStr}`);
+    let endDate = new Date(`${dateInput}T${endTimeStr}`);
+    if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1); // 跨天
+
+    const breakdown = [];
+    let total = 0;
+
+    const calcHours = (start, end) => ((end - start) / 3600000);
+
+    let current = new Date(startDate);
+
+    while (current < endDate) {
+        const nextHour = new Date(current);
+        nextHour.setHours(current.getHours() + 1, 0, 0, 0);
+        const segmentEnd = nextHour < endDate ? nextHour : endDate;
+
+        const isWeekend = [0, 6].includes(current.getDay());
+        const hourStart = current.getHours();
+        const hourEnd = segmentEnd.getHours();
+        const isOvertimeHour = isWeekend || hourStart < 8 || hourStart >= 17;
+
+        if (isOvertimeHour) {
+            const hours = calcHours(current, segmentEnd);
+            const rate = isWeekend ? 25 : 20;
+            const amount = +(hours * rate).toFixed(2);
+            breakdown.push({
+                type: isWeekend ? 'Weekend Overtime' : 'Late Overtime',
+                hours: hours.toFixed(2),
+                rate: rate,
+                amount: amount
+            });
+            total += amount;
         }
-        if (endDateTime > late) {
-          const h = calcH(Math.max(late, startDateTime), endDateTime);
-          if (h > 0) overtime.breakdown.push({ type: 'Late Overtime', hours: h.toFixed(2), rate: 20, amount: +(h * 20).toFixed(2) });
-        }
-        overtime.total = +overtime.breakdown.reduce((sum, i) => sum + i.amount, 0).toFixed(2);
-      }
-      return overtime;
+
+        current = segmentEnd;
     }
+
+    return {
+        total: +total.toFixed(2),
+        breakdown: breakdown
+    };
+}
+
 
     function syncFormData() {
       document.getElementById('show-driver').textContent = document.getElementById('driver').value;
