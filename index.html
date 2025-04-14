@@ -340,7 +340,7 @@
       await new Promise(resolve => requestAnimationFrame(resolve));
 
       new QRCode(qrcodeDiv, {
-        text: "simple_code_data_example", // 可改为 buildDataString() if needed
+        text: buildDataString(),  // 可改为 buildDataString() if needed
         width: 150, height: 150, colorDark: "#2c3e50", colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
       });
@@ -369,6 +369,17 @@
 
     ['start-time', 'end-time', 'date', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'].forEach(id =>
       document.getElementById(id).addEventListener('input', syncFormData));
+    function buildDataString() {
+      const plate = document.getElementById("plate").value;
+      const driver = document.getElementById("driver").value;
+      const date = document.getElementById("date").value.replace(/-/g, ""); // yyyymmdd
+      const startTime = document.getElementById("start-time").value.replace(":", "");
+      const endTime = document.getElementById("end-time").value.replace(":", "");
+      const startKm = document.getElementById("start-km").value;
+      const endKm = document.getElementById("end-km").value;
+  return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}ET:${endTime}SK:${startKm}EK:${endKm}`;
+}
+
   </script>
 </body>
 </html>
