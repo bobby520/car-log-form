@@ -99,7 +99,6 @@
             background: #f8f9fa;
             border-radius: 5px;
             font-size: 0.9em;
-            display: block;
         }
         .summary-label {
             color: #666;
@@ -117,13 +116,11 @@
             padding: 10px;
             border-radius: 5px;
             margin: 10px 0;
-            display: none;
         }
         .overtime-row {
             display: flex;
             justify-content: space-between;
             margin: 5px 0;
-            font-size: 0.85em;
         }
         @media (max-width: 480px) {
             .form-group input {
@@ -196,6 +193,7 @@
             <input type="number" id="end-km" placeholder="e.g., 49348" min="0" required>
         </div>
 
+        <!-- 费用输入顺序调整 -->
         <div class="form-group">
             <label>Fuel Cost (AED):</label>
             <input type="number" id="fuel" min="0" step="5" required>
@@ -206,6 +204,7 @@
             <input type="number" id="parking" min="0" step="5" required>
         </div>
 
+        <!-- 新增洗车费和维修费 -->
         <div class="form-group">
             <label>Car Wash Fee (AED):</label>
             <input type="number" id="car-wash" min="0" step="5" required>
@@ -260,28 +259,29 @@
                 <span id="show-odo"></span>
             </div>
 
-            <div class="summary-item" id="fuel-item">
+            <!-- 费用显示顺序调整 -->
+            <div class="summary-item">
                 <span class="summary-label">Fuel Cost:</span>
                 <span id="show-fuel"></span>
             </div>
-            <div class="summary-item" id="parking-item">
+            <div class="summary-item">
                 <span class="summary-label">Parking Fee:</span>
                 <span id="show-parking"></span>
             </div>
-            <div class="summary-item" id="carwash-item">
+            <div class="summary-item">
                 <span class="summary-label">Car Wash:</span>
                 <span id="show-carwash"></span>
             </div>
-            <div class="summary-item" id="maintenance-item">
+            <div class="summary-item">
                 <span class="summary-label">Maintenance:</span>
                 <span id="show-maintenance"></span>
             </div>
-            <div class="summary-item" id="taxi-item">
+            <div class="summary-item">
                 <span class="summary-label">Taxi Fare:</span>
                 <span id="show-taxi"></span>
             </div>
 
-            <div class="overtime-details" id="overtime-section">
+            <div class="overtime-details">
                 <div class="summary-item">
                     <span class="summary-label">Overtime:</span>
                     <span id="show-overtime"></span>
@@ -299,7 +299,7 @@
     <script>
         let generatedImageElement = null;
 
-        // 初始化日期为当天
+        // 初始化日期
         document.addEventListener('DOMContentLoaded', function() {
             const dateInput = document.getElementById('date');
             const now = new Date();
@@ -307,7 +307,7 @@
             dateInput.value = localDate.toISOString().substring(0, 10);
         });
 
-        // 处理手动输入车牌号
+        // 车牌手动输入
         document.getElementById('plate').addEventListener('change', function() {
             if (this.value === 'Other') {
                 const manualPlate = prompt('Enter license plate:');
@@ -321,15 +321,7 @@
             }
         });
 
-        // 精确的时间解析函数
-        function parseDateTime(dateStr, timeStr) {
-            const [hours, minutes] = timeStr.split(':').map(Number);
-            const date = new Date(dateStr);
-            date.setHours(hours, minutes, 0, 0);
-            return date;
-        }
-
-        // 改进的加班费计算逻辑
+        // 加班计算函数
         function calculateOvertime() {
             const start = document.getElementById('start-time').value;
             const end = document.getElementById('end-time').value;
@@ -337,62 +329,74 @@
             
             if (!start || !end || !dateInput) return { total: 0, breakdown: [] };
 
-            let current = parseDateTime(dateInput, start);
-            const endTime = parseDateTime(dateInput, end);
-            if (endTime < current) endTime.setDate(endTime.getDate() + 1);
+            const date = new Date(dateInput);
+            const yyyy = date.getFullYear();
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`;
 
-            const results = [];
-            let total = 0;
+            const startDateTime = new Date(`${dateStr}T${start}`);
+            let endDateTime = new Date(`${dateStr}T${end}`);
+            
+            if (endDateTime < startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
 
-            while (current < endTime) {
-                const hourStart = new Date(current);
-                const hourEnd = new Date(hourStart.getTime() + 60 * 60 * 1000);
-                const actualEnd = hourEnd > endTime ? endTime : hourEnd;
-                
-                // 判断是否为周末（周六=6，周日=0）
-                const isWeekend = [0, 6].includes(hourStart.getDay());
-                const rate = isWeekend ? 25 : 20;
-                
-                // 计算有效加班时间（排除08:00-17:00的工作时间）
-                let effectiveHours = 0;
-                if (!isWeekend) {
-                    const workStart = new Date(hourStart);
-                    workStart.setHours(8, 0, 0, 0);
-                    const workEnd = new Date(hourStart);
-                    workEnd.setHours(17, 0, 0, 0);
+            const calculateHours = (start, end) => {
+                return Number(((end - start) / 3600000).toFixed(2));
+            };
 
-                    const overlapStart = hourStart < workStart ? workStart : hourStart;
-                    const overlapEnd = actualEnd > workEnd ? workEnd : actualEnd;
-                    
-                    if (overlapStart < overlapEnd) {
-                        effectiveHours = (overlapEnd - overlapStart) / 3600000;
+            const isWeekend = [0, 6].includes(date.getDay());
+            const NORMAL_START = 8;
+            const NORMAL_END = 17;
+            let overtime = { total: 0, breakdown: [] };
+
+            if (isWeekend) {
+                const hours = calculateHours(startDateTime, endDateTime);
+                const rate = 25;
+                overtime.total = hours * rate;
+                overtime.breakdown.push({
+                    type: 'Weekend Overtime',
+                    hours: hours.toFixed(2),
+                    rate: rate,
+                    amount: +(hours * rate).toFixed(2)
+                });
+            } else {
+                const endEarly = new Date(startDateTime);
+                endEarly.setHours(NORMAL_START, 0, 0, 0);
+                const earlyEnd = endDateTime < endEarly ? endDateTime : endEarly;
+                if (startDateTime < earlyEnd) {
+                    const hours = calculateHours(startDateTime, earlyEnd);
+                    if (hours > 0) {
+                        overtime.breakdown.push({
+                            type: 'Early Overtime',
+                            hours: hours.toFixed(2),
+                            rate: 20,
+                            amount: +(hours * 20).toFixed(2)
+                        });
                     }
-                } else {
-                    effectiveHours = (actualEnd - hourStart) / 3600000;
                 }
 
-                if (effectiveHours > 0) {
-                    const amount = effectiveHours * rate;
-                    results.push({
-                        start: hourStart.toLocaleString('en-US', { hour12: false }),
-                        end: actualEnd.toLocaleString('en-US', { hour12: false }),
-                        hours: effectiveHours.toFixed(2),
-                        rate: rate,
-                        amount: +amount.toFixed(2)
-                    });
-                    total += amount;
+                const startLate = new Date(startDateTime);
+                startLate.setHours(NORMAL_END, 0, 0, 0);
+                const lateStart = startDateTime > startLate ? startDateTime : startLate;
+                if (endDateTime > lateStart) {
+                    const hours = calculateHours(lateStart, endDateTime);
+                    if (hours > 0) {
+                        overtime.breakdown.push({
+                            type: 'Late Overtime',
+                            hours: hours.toFixed(2),
+                            rate: 20,
+                            amount: +(hours * 20).toFixed(2)
+                        });
+                    }
                 }
 
-                current = hourEnd;
+                overtime.total = +overtime.breakdown.reduce((sum, item) => sum + item.amount, 0).toFixed(2);
             }
 
-            return {
-                total: +total.toFixed(2),
-                breakdown: results
-            };
+            return overtime;
         }
 
-        // 同步表单数据显示
+        // 同步表单数据
         function syncFormData() {
             document.getElementById('show-driver').textContent = document.getElementById('driver').value;
             document.getElementById('show-date').textContent = document.getElementById('date').value;
@@ -403,85 +407,40 @@
             document.getElementById('show-odo').textContent = 
                 `${document.getElementById('start-km').value} → ${document.getElementById('end-km').value} KM`;
 
-            // 费用显示控制
-            const controlItem = (value, itemId, showId) => {
-                const element = document.getElementById(itemId);
-                const showElement = document.getElementById(showId);
-                if (value > 0) {
-                    element.style.display = "block";
-                    showElement.textContent = `${value} AED`;
-                } else {
-                    element.style.display = "none";
-                }
-            };
-
+            // 获取所有费用值
             const fuel = +document.getElementById('fuel').value || 0;
-            controlItem(fuel, 'fuel-item', 'show-fuel');
-
             const parking = +document.getElementById('parking').value || 0;
-            controlItem(parking, 'parking-item', 'show-parking');
-
             const carWash = +document.getElementById('car-wash').value || 0;
-            controlItem(carWash, 'carwash-item', 'show-carwash');
-
             const maintenance = +document.getElementById('maintenance').value || 0;
-            controlItem(maintenance, 'maintenance-item', 'show-maintenance');
-
             const taxi = +document.getElementById('taxi').value || 0;
-            controlItem(taxi, 'taxi-item', 'show-taxi');
 
-            // 加班费显示
+            // 显示费用
+            document.getElementById('show-fuel').textContent = `${fuel} AED`;
+            document.getElementById('show-parking').textContent = `${parking} AED`;
+            document.getElementById('show-carwash').textContent = `${carWash} AED`;
+            document.getElementById('show-maintenance').textContent = `${maintenance} AED`;
+            document.getElementById('show-taxi').textContent = `${taxi} AED`;
+
+            // 计算加班费
             const overtime = calculateOvertime();
-            const overtimeSection = document.getElementById('overtime-section');
-            if (overtime.total > 0) {
-                overtimeSection.style.display = "block";
-                document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
-                
-                const breakdownDiv = document.getElementById('overtime-breakdown');
-                breakdownDiv.innerHTML = overtime.breakdown.map(item => `
-                    <div class="overtime-row">
-                        <span>${item.start.split(', ')[1]} - ${item.end.split(', ')[1]}</span>
-                        <span>${item.hours}h × ${item.rate}AED</span>
-                        <span>${item.amount.toFixed(2)}AED</span>
-                    </div>
-                `).join('');
-            } else {
-                overtimeSection.style.display = "none";
-            }
+            document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
+            
+            // 显示加班明细
+            const breakdownDiv = document.getElementById('overtime-breakdown');
+            breakdownDiv.innerHTML = overtime.breakdown.map(item => `
+                <div class="overtime-row">
+                    <span>${item.type}</span>
+                    <span>${item.hours}h × ${item.rate}AED</span>
+                    <span>${item.amount}AED</span>
+                </div>
+            `).join('');
 
-            // 总费用计算
+            // 计算总费用
             const totalCost = fuel + parking + carWash + maintenance + taxi + overtime.total;
             document.getElementById('show-total').textContent = `${totalCost.toFixed(2)} AED`;
         }
 
-        // 生成数据字符串
-        function buildDataString() {
-            const overtime = calculateOvertime();
-            return [
-                `driver:${document.getElementById("driver").value}`,
-                `plate:${document.getElementById("plate").value}`,
-                `date:${document.getElementById("date").value}`,
-                `start_time:${document.getElementById("start-time").value}`,
-                `end_time:${document.getElementById("end-time").value}`,
-                `booker:${document.getElementById("name").value}`,
-                `start_km:${document.getElementById("start-km").value}`,
-                `end_km:${document.getElementById("end-km").value}`,
-                `fuel_cost:${document.getElementById("fuel").value}`,
-                `parking_fee:${document.getElementById("parking").value}`,
-                `car_wash:${document.getElementById("car-wash").value}`,
-                `maintenance:${document.getElementById("maintenance").value}`,
-                `taxi_fare:${document.getElementById("taxi").value}`,
-                `overtime_breakdown:${JSON.stringify(overtime.breakdown)}`,
-                `total_cost:${(+document.getElementById("fuel").value + 
-                              +document.getElementById("parking").value + 
-                              +document.getElementById("car-wash").value +
-                              +document.getElementById("maintenance").value +
-                              +document.getElementById("taxi").value + 
-                              overtime.total).toFixed(2)}`
-            ].join("|");
-        }
-
-        // 生成并分享记录
+        // 生成二维码和截图
         async function generateAndShare() {
             const startKm = +document.getElementById("start-km").value;
             const endKm = +document.getElementById("end-km").value;
@@ -545,7 +504,39 @@
             }
         }
 
-        // 实时更新显示
+        // 构建二维码数据
+        function buildDataString() {
+            const overtime = calculateOvertime();
+            const date = new Date(document.getElementById('date').value);
+            
+            return [
+                `driver:${document.getElementById("driver").value}`,
+                `plate:${document.getElementById("plate").value}`,
+                `date:${document.getElementById("date").value}`,
+                `start_time:${document.getElementById("start-time").value}`,
+                `end_time:${document.getElementById("end-time").value}`,
+                `booker:${document.getElementById("name").value}`,
+                `start_km:${document.getElementById("start-km").value}`,
+                `end_km:${document.getElementById("end-km").value}`,
+                `fuel_cost:${document.getElementById("fuel").value}`,
+                `parking_fee:${document.getElementById("parking").value}`,
+                `car_wash:${document.getElementById("car-wash").value}`,
+                `maintenance:${document.getElementById("maintenance").value}`,
+                `taxi_fare:${document.getElementById("taxi").value}`,
+                `is_weekend:${[0,6].includes(date.getDay())}`,
+                `overtime_hours:${overtime.breakdown.reduce((sum, item) => sum + parseFloat(item.hours), 0).toFixed(2)}`,
+                `overtime_rate:${[0,6].includes(date.getDay()) ? 25 : 20}`,
+                `overtime_amount:${overtime.total}`,
+                `total_cost:${(+document.getElementById("fuel").value + 
+                              +document.getElementById("parking").value + 
+                              +document.getElementById("car-wash").value +
+                              +document.getElementById("maintenance").value +
+                              +document.getElementById("taxi").value + 
+                              overtime.total).toFixed(2)}`
+            ].join("|");
+        }
+
+        // 事件监听
         document.getElementById('start-time').addEventListener('change', syncFormData);
         document.getElementById('end-time').addEventListener('change', syncFormData);
         document.getElementById('date').addEventListener('change', syncFormData);
