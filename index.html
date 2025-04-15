@@ -148,7 +148,6 @@
         <option value="Malik">Malik</option>
       </select>
     </div>
-
     <div class="form-group"><label>Date:</label><input type="date" id="date" required></div>
     <div class="form-group"><label>License Plate:</label><select id="plate" required>
         <option value="" disabled selected>Select Vehicle</option>
@@ -163,11 +162,11 @@
     <div class="form-group"><label>Start Odometer (KM):</label><input type="number" id="start-km" min="0" required></div>
     <div class="form-group"><label>End Time:</label><input type="time" id="end-time" required></div>
     <div class="form-group"><label>End Odometer (KM):</label><input type="number" id="end-km" min="0" required></div>
-    <div class="form-group"><label>Fuel Cost (AED):</label><input type="number" id="fuel" min="0" step="5" required></div>
-    <div class="form-group"><label>Parking Fee (AED):</label><input type="number" id="parking" min="0" step="5" required></div>
-    <div class="form-group"><label>Car Wash Fee (AED):</label><input type="number" id="car-wash" min="0" step="5" required></div>
-    <div class="form-group"><label>Maintenance Fee (AED):</label><input type="number" id="maintenance" min="0" step="5" required></div>
-    <div class="form-group"><label>Taxi Fare (AED):</label><input type="number" id="taxi" min="0" step="5" required></div>
+    <div class="form-group"><label>Fuel Cost (AED):</label><input type="number" id="fuel" min="0" step="5"></div>
+    <div class="form-group"><label>Parking Fee (AED):</label><input type="number" id="parking" min="0" step="5"></div>
+    <div class="form-group"><label>Car Wash Fee (AED):</label><input type="number" id="car-wash" min="0" step="5"></div>
+    <div class="form-group"><label>Maintenance Fee (AED):</label><input type="number" id="maintenance" min="0" step="5"></div>
+    <div class="form-group"><label>Taxi Fare (AED):</label><input type="number" id="taxi" min="0" step="5"></div>
 
     <button onclick="generateAndShare()">Generate QR Code</button>
   </div>
@@ -198,11 +197,10 @@
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
-      const dateInput = document.getElementById('date');
+    document.addEventListener('DOMContentLoaded', () => {
       const now = new Date();
       const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-      dateInput.value = localDate.toISOString().substring(0, 10);
+      document.getElementById('date').value = localDate.toISOString().substring(0, 10);
     });
 
     document.getElementById('plate').addEventListener('change', function () {
@@ -218,70 +216,41 @@
       }
     });
 
-  function calculateOvertime() {
-    const startTimeStr = document.getElementById('start-time').value;
-    const endTimeStr = document.getElementById('end-time').value;
-    const dateInput = document.getElementById('date').value;
+    function calculateOvertime() {
+      const start = document.getElementById('start-time').value;
+      const end = document.getElementById('end-time').value;
+      const date = document.getElementById('date').value;
+      if (!start || !end || !date) return { total: 0, breakdown: [] };
 
-    if (!startTimeStr || !endTimeStr || !dateInput) return { total: 0, breakdown: [] };
+      const s = new Date(`${date}T${start}`);
+      const e = new Date(`${date}T${end}`);
+      if (e <= s) e.setDate(e.getDate() + 1);
 
-    const startDate = new Date(`${dateInput}T${startTimeStr}`);
-    let endDate = new Date(`${dateInput}T${endTimeStr}`);
-    if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1); // 跨天情况
+      const breakdown = [], calcHours = (a, b) => ((b - a) / 3600000);
+      let total = 0, current = new Date(s);
 
-    const breakdown = [];
-    let total = 0;
+      while (current < e) {
+        let next = new Date(current);
+        next.setHours(current.getHours() + 1, 0, 0, 0);
+        if (next > e) next = new Date(e);
 
-    const calcHours = (start, end) => ((end - start) / 3600000);
+        const day = current.getDay(), hour = current.getHours();
+        const weekend = (day === 0 || day === 6);
+        let type = null, rate = 0;
 
-    let current = new Date(startDate);
+        if (weekend) { type = 'Weekend Overtime'; rate = 25; }
+        else if (hour < 8 || hour >= 17) { type = hour < 8 ? 'Early Overtime' : 'Late Overtime'; rate = 20; }
 
-    while (current < endDate) {
-        let nextHour = new Date(current);
-        nextHour.setHours(current.getHours() + 1, 0, 0, 0);
-        if (nextHour > endDate) nextHour = new Date(endDate);
-
-        const day = current.getDay();
-        const hour = current.getHours();
-        const isWeekend = (day === 0 || day === 6);
-
-        let overtimeType = null;
-        let rate = 0;
-
-        if (isWeekend) {
-            overtimeType = 'Weekend Overtime';
-            rate = 25;
-        } else {
-            if (hour < 8) {
-                overtimeType = 'Early Overtime';
-                rate = 20;
-            } else if (hour >= 17) {
-                overtimeType = 'Late Overtime';
-                rate = 20;
-            }
+        if (type) {
+          const hrs = calcHours(current, next), amt = +(hrs * rate).toFixed(2);
+          breakdown.push({ type, hours: hrs.toFixed(2), rate, amount: amt });
+          total += amt;
         }
+        current = new Date(next);
+      }
 
-        if (overtimeType) {
-            const hours = calcHours(current, nextHour);
-            const amount = +(hours * rate).toFixed(2);
-            breakdown.push({
-                type: overtimeType,
-                hours: hours.toFixed(2),
-                rate: rate,
-                amount: amount
-            });
-            total += amount;
-        }
-
-        current = new Date(nextHour);
+      return { total: +total.toFixed(2), breakdown };
     }
-
-    return {
-        total: +total.toFixed(2),
-        breakdown: breakdown
-    };
-}
-
 
     function syncFormData() {
       document.getElementById('show-driver').textContent = document.getElementById('driver').value;
@@ -314,42 +283,48 @@
       setCostVisibility('show-taxi', taxi);
 
       const overtime = calculateOvertime();
-      document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
+      const overtimeSection = document.querySelector('.overtime-details');
+      const totalCostItem = document.querySelector('.total-cost');
       const breakdown = document.getElementById('overtime-breakdown');
-      breakdown.innerHTML = overtime.breakdown.map(i => `<div class="overtime-row"><span>${i.type}</span><span>${i.hours}h × ${i.rate}AED</span><span>${i.amount}AED</span></div>`).join('');
+
+      if (overtime.total > 0) {
+        document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
+        overtimeSection.style.display = '';
+        breakdown.innerHTML = overtime.breakdown.map(i =>
+          `<div class="overtime-row"><span>${i.type}</span><span>${i.hours}h × ${i.rate}AED</span><span>${i.amount}AED</span></div>`).join('');
+      } else {
+        overtimeSection.style.display = 'none';
+        breakdown.innerHTML = '';
+      }
+
       const totalCost = fuel + parking + carWash + maintenance + taxi + overtime.total;
-      document.getElementById('show-total').textContent = `${totalCost.toFixed(2)} AED`;
+      if (totalCost > 0) {
+        document.getElementById('show-total').textContent = `${totalCost.toFixed(2)} AED`;
+        totalCostItem.style.display = '';
+      } else {
+        totalCostItem.style.display = 'none';
+      }
     }
 
     async function generateAndShare() {
       const startKm = +document.getElementById("start-km").value;
       const endKm = +document.getElementById("end-km").value;
       if (endKm <= startKm) return alert("End odometer must be greater than start!");
-
-      const fuel = +document.getElementById('fuel').value;
-      const parking = +document.getElementById('parking').value;
-      const carWash = +document.getElementById('car-wash').value;
-      const maintenance = +document.getElementById('maintenance').value;
-      const taxi = +document.getElementById('taxi').value;
-
-      if ([fuel, parking, carWash, maintenance, taxi].some(x => x < 0)) return alert("Costs cannot be negative!");
-
       syncFormData();
+
       const qrcodeDiv = document.getElementById("qrcode-section");
       qrcodeDiv.innerHTML = "";
-      await new Promise(resolve => requestAnimationFrame(resolve));
-
+      await new Promise(r => requestAnimationFrame(r));
       new QRCode(qrcodeDiv, {
-        text: buildDataString(),  // 可改为 buildDataString() if needed
-        width: 150, height: 150, colorDark: "#2c3e50", colorLight: "#ffffff",
+        text: buildDataString(),
+        width: 150, height: 150,
+        colorDark: "#2c3e50", colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
       });
 
-      await new Promise(resolve => setTimeout(resolve, 300));
-
+      await new Promise(r => setTimeout(r, 300));
       const exportContainer = document.getElementById("export-container");
       exportContainer.style.display = "flex";
-
       try {
         const canvas = await html2canvas(exportContainer, { useCORS: true, scale: 2 });
         exportContainer.style.display = "none";
@@ -361,7 +336,7 @@
         link.download = `Driving_Record_${Date.now()}.png`;
         link.href = img.src;
         link.click();
-      } catch (e) {
+      } catch {
         alert("Generation failed.");
         exportContainer.style.display = "none";
       }
@@ -369,6 +344,7 @@
 
     ['start-time', 'end-time', 'date', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'].forEach(id =>
       document.getElementById(id).addEventListener('input', syncFormData));
+
     function buildDataString() {
       const plate = document.getElementById("plate").value;
       const driver = document.getElementById("driver").value;
