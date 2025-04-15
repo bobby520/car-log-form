@@ -372,14 +372,22 @@
     function buildDataString() {
       const plate = document.getElementById("plate").value;
       const driver = document.getElementById("driver").value;
-      const date = document.getElementById("date").value.replace(/-/g, ""); // yyyymmdd
-      const startTime = document.getElementById("start-time").value.replace(":", "");
-      const endTime = document.getElementById("end-time").value.replace(":", "");
+      const dateStr = document.getElementById("date").value;
+      const date = dateStr.replace(/-/g, "");
+      const startTimeRaw = document.getElementById("start-time").value;
+      const endTimeRaw = document.getElementById("end-time").value;
+      const startTime = startTimeRaw.replace(":", "");
+      const endTime = endTimeRaw.replace(":", "");
       const startKm = document.getElementById("start-km").value;
       const endKm = document.getElementById("end-km").value;
-  return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}ET:${endTime}SK:${startKm}EK:${endKm}`;
-}
 
+      const startDateTime = new Date(`${dateStr}T${startTimeRaw}`);
+      let endDateTime = new Date(`${dateStr}T${endTimeRaw}`);
+      if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
+      const endDate = endDateTime.toISOString().substring(0, 10).replace(/-/g, "");
+
+      return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}EDT:${endDate}ET:${endTime}SK:${startKm}EK:${endKm}`;
+    }
   </script>
 </body>
 </html>
