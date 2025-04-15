@@ -130,19 +130,6 @@
         width: 90px;
       }
     }
-    #autosave-toast {
-      display: none;
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      background-color: #28a745;
-      color: white;
-      padding: 8px 14px;
-      border-radius: 6px;
-      font-size: 14px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-      z-index: 1000;
-    }
   </style>
 </head>
 <body>
@@ -162,16 +149,14 @@
       </select>
     </div>
     <div class="form-group"><label>Date:</label><input type="date" id="date" required></div>
-    <div class="form-group"><label>License Plate:</label>
-      <select id="plate" required>
+    <div class="form-group"><label>License Plate:</label><select id="plate" required>
         <option value="" disabled selected>Select Vehicle</option>
         <option value="F24345">F24345</option>
         <option value="N75132">N75132</option>
         <option value="M92098">M92098</option>
         <option value="T71027">T71027</option>
         <option value="Other">Other (Manual Input)</option>
-      </select>
-    </div>
+      </select></div>
     <div class="form-group"><label>Booked by:</label><input type="text" id="name" placeholder="e.g., Mr. Zhang" required></div>
     <div class="form-group"><label>Start Time:</label><input type="time" id="start-time" required></div>
     <div class="form-group"><label>Start Odometer (KM):</label><input type="number" id="start-km" min="0" required></div>
@@ -211,222 +196,174 @@
     <div id="qrcode-section"></div>
   </div>
 
-  <div id="autosave-toast">Draft autosaved</div>
-
-<script>
-  document.addEventListener('DOMContentLoaded', () => {
-    const now = new Date();
-    const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-    document.getElementById('date').value = localDate.toISOString().substring(0, 10);
-  });
-
-  document.getElementById('plate').addEventListener('change', function () {
-    if (this.value === 'Other') {
-      const manualPlate = prompt('Enter license plate:');
-      if (manualPlate) {
-        const newOption = document.createElement('option');
-        newOption.value = manualPlate;
-        newOption.textContent = manualPlate;
-        this.appendChild(newOption);
-        this.value = manualPlate;
-      }
-    }
-  });
-
-  function getDraftKey() {
-    const driver = document.getElementById('driver').value;
-    return driver ? `draft_${driver}` : null;
-  }
-
-  function autoSaveDraft() {
-    const key = getDraftKey();
-    if (!key) return;
-    const fields = [
-      'driver', 'date', 'plate', 'name',
-      'start-time', 'start-km', 'end-time', 'end-km',
-      'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'
-    ];
-    const data = {};
-    fields.forEach(id => data[id] = document.getElementById(id).value);
-    localStorage.setItem(key, JSON.stringify(data));
-    showAutosaveToast();
-  }
-
-  function showAutosaveToast() {
-    const toast = document.getElementById('autosave-toast');
-    toast.style.display = 'block';
-    setTimeout(() => { toast.style.display = 'none'; }, 1500);
-  }
-
-  function loadDraft() {
-    const key = getDraftKey();
-    if (!key) return;
-    const saved = localStorage.getItem(key);
-    if (!saved) return;
-    const data = JSON.parse(saved);
-    for (let id in data) {
-      const el = document.getElementById(id);
-      if (el) el.value = data[id];
-    }
-    syncFormData();
-  }
-
-  ['driver', 'date', 'plate', 'name', 'start-time', 'start-km', 'end-time', 'end-km', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi']
-    .forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.addEventListener('input', autoSaveDraft);
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const now = new Date();
+      const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
+      document.getElementById('date').value = localDate.toISOString().substring(0, 10);
     });
 
-  document.getElementById("driver").addEventListener("change", () => {
-    loadDraft();
-  });
-
-  function calculateOvertime() {
-    const start = document.getElementById('start-time').value;
-    const end = document.getElementById('end-time').value;
-    const date = document.getElementById('date').value;
-    if (!start || !end || !date) return { total: 0, breakdown: [] };
-
-    const s = new Date(`${date}T${start}`);
-    const e = new Date(`${date}T${end}`);
-    if (e <= s) e.setDate(e.getDate() + 1);
-
-    const breakdown = [], calcHours = (a, b) => ((b - a) / 3600000);
-    let total = 0, current = new Date(s);
-
-    while (current < e) {
-      let next = new Date(current);
-      next.setHours(current.getHours() + 1, 0, 0, 0);
-      if (next > e) next = new Date(e);
-
-      const day = current.getDay(), hour = current.getHours();
-      const weekend = (day === 0 || day === 6);
-      let type = null, rate = 0;
-
-      if (weekend) { type = 'Weekend Overtime'; rate = 25; }
-      else if (hour < 8 || hour >= 17) { type = hour < 8 ? 'Early Overtime' : 'Late Overtime'; rate = 20; }
-
-      if (type) {
-        const hrs = calcHours(current, next), amt = +(hrs * rate).toFixed(2);
-        breakdown.push({ type, hours: hrs.toFixed(2), rate, amount: amt });
-        total += amt;
+    document.getElementById('plate').addEventListener('change', function () {
+      if (this.value === 'Other') {
+        const manualPlate = prompt('Enter license plate:');
+        if (manualPlate) {
+          const newOption = document.createElement('option');
+          newOption.value = manualPlate;
+          newOption.textContent = manualPlate;
+          this.appendChild(newOption);
+          this.value = manualPlate;
+        }
       }
-      current = new Date(next);
+    });
+
+    function calculateOvertime() {
+      const start = document.getElementById('start-time').value;
+      const end = document.getElementById('end-time').value;
+      const date = document.getElementById('date').value;
+      if (!start || !end || !date) return { total: 0, breakdown: [] };
+
+      const s = new Date(`${date}T${start}`);
+      const e = new Date(`${date}T${end}`);
+      if (e <= s) e.setDate(e.getDate() + 1);
+
+      const breakdown = [], calcHours = (a, b) => ((b - a) / 3600000);
+      let total = 0, current = new Date(s);
+
+      while (current < e) {
+        let next = new Date(current);
+        next.setHours(current.getHours() + 1, 0, 0, 0);
+        if (next > e) next = new Date(e);
+
+        const day = current.getDay(), hour = current.getHours();
+        const weekend = (day === 0 || day === 6);
+        let type = null, rate = 0;
+
+        if (weekend) { type = 'Weekend Overtime'; rate = 25; }
+        else if (hour < 8 || hour >= 17) { type = hour < 8 ? 'Early Overtime' : 'Late Overtime'; rate = 20; }
+
+        if (type) {
+          const hrs = calcHours(current, next), amt = +(hrs * rate).toFixed(2);
+          breakdown.push({ type, hours: hrs.toFixed(2), rate, amount: amt });
+          total += amt;
+        }
+        current = new Date(next);
+      }
+
+      return { total: +total.toFixed(2), breakdown };
     }
 
-    return { total: +total.toFixed(2), breakdown };
-  }
+    function syncFormData() {
+      document.getElementById('show-driver').textContent = document.getElementById('driver').value;
+      document.getElementById('show-date').textContent = document.getElementById('date').value;
+      document.getElementById('show-plate').textContent = document.getElementById('plate').value;
+      document.getElementById('show-booker').textContent = document.getElementById('name').value;
+      document.getElementById('show-start-time').textContent = document.getElementById('start-time').value;
+      document.getElementById('show-end-time').textContent = document.getElementById('end-time').value;
+      document.getElementById('show-odo').textContent = `${document.getElementById('start-km').value} → ${document.getElementById('end-km').value} KM`;
 
-  function syncFormData() {
-    document.getElementById('show-driver').textContent = document.getElementById('driver').value;
-    document.getElementById('show-date').textContent = document.getElementById('date').value;
-    document.getElementById('show-plate').textContent = document.getElementById('plate').value;
-    document.getElementById('show-booker').textContent = document.getElementById('name').value;
-    document.getElementById('show-start-time').textContent = document.getElementById('start-time').value;
-    document.getElementById('show-end-time').textContent = document.getElementById('end-time').value;
-    document.getElementById('show-odo').textContent = `${document.getElementById('start-km').value} → ${document.getElementById('end-km').value} KM`;
+      const fuel = +document.getElementById('fuel').value || 0;
+      const parking = +document.getElementById('parking').value || 0;
+      const carWash = +document.getElementById('car-wash').value || 0;
+      const maintenance = +document.getElementById('maintenance').value || 0;
+      const taxi = +document.getElementById('taxi').value || 0;
 
-    const fuel = +document.getElementById('fuel').value || 0;
-    const parking = +document.getElementById('parking').value || 0;
-    const carWash = +document.getElementById('car-wash').value || 0;
-    const maintenance = +document.getElementById('maintenance').value || 0;
-    const taxi = +document.getElementById('taxi').value || 0;
+      const setCostVisibility = (id, val) => {
+        const item = document.getElementById(id).closest('.summary-item');
+        if (val > 0) {
+          document.getElementById(id).textContent = `${val} AED`;
+          item.style.display = '';
+        } else {
+          item.style.display = 'none';
+        }
+      };
+      setCostVisibility('show-fuel', fuel);
+      setCostVisibility('show-parking', parking);
+      setCostVisibility('show-carwash', carWash);
+      setCostVisibility('show-maintenance', maintenance);
+      setCostVisibility('show-taxi', taxi);
 
-    const setCostVisibility = (id, val) => {
-      const item = document.getElementById(id).closest('.summary-item');
-      if (val > 0) {
-        document.getElementById(id).textContent = `${val} AED`;
-        item.style.display = '';
+      const overtime = calculateOvertime();
+      const overtimeSection = document.querySelector('.overtime-details');
+      const totalCostItem = document.querySelector('.total-cost');
+      const breakdown = document.getElementById('overtime-breakdown');
+
+      if (overtime.total > 0) {
+        document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
+        overtimeSection.style.display = '';
+        breakdown.innerHTML = overtime.breakdown.map(i =>
+          `<div class="overtime-row"><span>${i.type}</span><span>${i.hours}h × ${i.rate}AED</span><span>${i.amount}AED</span></div>`).join('');
       } else {
-        item.style.display = 'none';
+        overtimeSection.style.display = 'none';
+        breakdown.innerHTML = '';
       }
-    };
-    setCostVisibility('show-fuel', fuel);
-    setCostVisibility('show-parking', parking);
-    setCostVisibility('show-carwash', carWash);
-    setCostVisibility('show-maintenance', maintenance);
-    setCostVisibility('show-taxi', taxi);
 
-    const overtime = calculateOvertime();
-    const overtimeSection = document.querySelector('.overtime-details');
-    const totalCostItem = document.querySelector('.total-cost');
-    const breakdown = document.getElementById('overtime-breakdown');
-
-    if (overtime.total > 0) {
-      document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
-      overtimeSection.style.display = '';
-      breakdown.innerHTML = overtime.breakdown.map(i =>
-        `<div class="overtime-row"><span>${i.type}</span><span>${i.hours}h × ${i.rate}AED</span><span>${i.amount}AED</span></div>`).join('');
-    } else {
-      overtimeSection.style.display = 'none';
-      breakdown.innerHTML = '';
+      const totalCost = fuel + parking + carWash + maintenance + taxi + overtime.total;
+      if (totalCost > 0) {
+        document.getElementById('show-total').textContent = `${totalCost.toFixed(2)} AED`;
+        totalCostItem.style.display = '';
+      } else {
+        totalCostItem.style.display = 'none';
+      }
     }
 
-    const totalCost = fuel + parking + carWash + maintenance + taxi + overtime.total;
-    if (totalCost > 0) {
-      document.getElementById('show-total').textContent = `${totalCost.toFixed(2)} AED`;
-      totalCostItem.style.display = '';
-    } else {
-      totalCostItem.style.display = 'none';
+    async function generateAndShare() {
+      const startKm = +document.getElementById("start-km").value;
+      const endKm = +document.getElementById("end-km").value;
+      if (endKm <= startKm) return alert("End odometer must be greater than start!");
+      syncFormData();
+
+      const qrcodeDiv = document.getElementById("qrcode-section");
+      qrcodeDiv.innerHTML = "";
+      await new Promise(r => requestAnimationFrame(r));
+      new QRCode(qrcodeDiv, {
+        text: buildDataString(),
+        width: 150, height: 150,
+        colorDark: "#2c3e50", colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      await new Promise(r => setTimeout(r, 300));
+      const exportContainer = document.getElementById("export-container");
+      exportContainer.style.display = "flex";
+      try {
+        const canvas = await html2canvas(exportContainer, { useCORS: true, scale: 2 });
+        exportContainer.style.display = "none";
+        const img = document.createElement('img');
+        img.id = 'generated-image';
+        img.src = canvas.toDataURL();
+        document.body.appendChild(img);
+        const link = document.createElement('a');
+        link.download = `Driving_Record_${Date.now()}.png`;
+        link.href = img.src;
+        link.click();
+      } catch {
+        alert("Generation failed.");
+        exportContainer.style.display = "none";
+      }
     }
-  }
 
-  async function generateAndShare() {
-    const startKm = +document.getElementById("start-km").value;
-    const endKm = +document.getElementById("end-km").value;
-    if (endKm <= startKm) return alert("End odometer must be greater than start!");
-    syncFormData();
+    ['start-time', 'end-time', 'date', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'].forEach(id =>
+      document.getElementById(id).addEventListener('input', syncFormData));
 
-    const qrcodeDiv = document.getElementById("qrcode-section");
-    qrcodeDiv.innerHTML = "";
-    await new Promise(r => requestAnimationFrame(r));
-    new QRCode(qrcodeDiv, {
-      text: buildDataString(),
-      width: 150, height: 150,
-      colorDark: "#2c3e50", colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.H
-    });
+    function buildDataString() {
+      const plate = document.getElementById("plate").value;
+      const driver = document.getElementById("driver").value;
+      const dateStr = document.getElementById("date").value;
+      const date = dateStr.replace(/-/g, "");
+      const startTimeRaw = document.getElementById("start-time").value;
+      const endTimeRaw = document.getElementById("end-time").value;
+      const startTime = startTimeRaw.replace(":", "");
+      const endTime = endTimeRaw.replace(":", "");
+      const startKm = document.getElementById("start-km").value;
+      const endKm = document.getElementById("end-km").value;
 
-    await new Promise(r => setTimeout(r, 300));
-    const exportContainer = document.getElementById("export-container");
-    exportContainer.style.display = "flex";
-    try {
-      const canvas = await html2canvas(exportContainer, { useCORS: true, scale: 2 });
-      exportContainer.style.display = "none";
-      const img = document.createElement('img');
-      img.id = 'generated-image';
-      img.src = canvas.toDataURL();
-      document.body.appendChild(img);
-      const link = document.createElement('a');
-      link.download = `Driving_Record_${Date.now()}.png`;
-      link.href = img.src;
-      link.click();
-    } catch {
-      alert("Generation failed.");
-      exportContainer.style.display = "none";
+      const startDateTime = new Date(`${dateStr}T${startTimeRaw}`);
+      let endDateTime = new Date(`${dateStr}T${endTimeRaw}`);
+      if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
+      const endDate = endDateTime.toISOString().substring(0, 10).replace(/-/g, "");
+
+      return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}EDT:${endDate}ET:${endTime}SK:${startKm}EK:${endKm}`;
     }
-  }
-
-  function buildDataString() {
-    const plate = document.getElementById("plate").value;
-    const driver = document.getElementById("driver").value;
-    const dateStr = document.getElementById("date").value;
-    const date = dateStr.replace(/-/g, "");
-    const startTimeRaw = document.getElementById("start-time").value;
-    const endTimeRaw = document.getElementById("end-time").value;
-    const startTime = startTimeRaw.replace(":", "");
-    const endTime = endTimeRaw.replace(":", "");
-    const startKm = document.getElementById("start-km").value;
-    const endKm = document.getElementById("end-km").value;
-
-    const startDateTime = new Date(`${dateStr}T${startTimeRaw}`);
-    let endDateTime = new Date(`${dateStr}T${endTimeRaw}`);
-    if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
-    const endDate = endDateTime.toISOString().substring(0, 10).replace(/-/g, "");
-
-    return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}EDT:${endDate}ET:${endTime}SK:${startKm}EK:${endKm}`;
-  }
-</script>
-
+  </script>
 </body>
 </html>
