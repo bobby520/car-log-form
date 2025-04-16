@@ -216,7 +216,6 @@
 <script>
   // 初始化逻辑增强
   document.addEventListener('DOMContentLoaded', () => {
-    // 尝试加载最后使用的司机
     const lastDriver = localStorage.getItem('lastDriver');
     if (lastDriver) {
       const driverSelect = document.getElementById('driver');
@@ -224,13 +223,11 @@
       loadDraft();
     }
 
-    // 设置默认日期
     const now = new Date();
     const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
     document.getElementById('date').value = localDate.toISOString().substring(0, 10);
   });
 
-  // 车牌手动输入处理
   document.getElementById('plate').addEventListener('change', function () {
     if (this.value === 'Other') {
       const manualPlate = prompt('Enter license plate:');
@@ -244,7 +241,6 @@
     }
   });
 
-  // 草稿功能核心逻辑
   function getDraftKey() {
     const driver = document.getElementById('driver').value;
     return driver ? `draft_${driver}` : null;
@@ -253,16 +249,10 @@
   function autoSaveDraft() {
     const driver = document.getElementById('driver').value;
     if (!driver) return;
-    
-    // 保存最后使用的司机
+
     localStorage.setItem('lastDriver', driver);
-    
     const key = `draft_${driver}`;
-    const fields = [
-      'driver', 'date', 'plate', 'name',
-      'start-time', 'start-km', 'end-time', 'end-km',
-      'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'
-    ];
+    const fields = ['driver', 'date', 'plate', 'name', 'start-time', 'start-km', 'end-time', 'end-km', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'];
     const data = {};
     fields.forEach(id => data[id] = document.getElementById(id).value);
     localStorage.setItem(key, JSON.stringify(data));
@@ -288,20 +278,17 @@
     syncFormData();
   }
 
-  // 绑定自动保存事件
   ['driver', 'date', 'plate', 'name', 'start-time', 'start-km', 'end-time', 'end-km', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi']
     .forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('input', autoSaveDraft);
     });
 
-  // 司机切换处理
   document.getElementById("driver").addEventListener("change", () => {
     localStorage.setItem('lastDriver', document.getElementById('driver').value);
     loadDraft();
   });
 
-  // 业务逻辑函数（保持原有功能）
   function calculateOvertime() {
     const start = document.getElementById('start-time').value;
     const end = document.getElementById('end-time').value;
@@ -426,6 +413,24 @@
       alert("Generation failed.");
       exportContainer.style.display = "none";
     }
+
+    // 自动清空并清除草稿
+    resetForm();
+  }
+
+  function resetForm() {
+    const fields = ['driver', 'date', 'plate', 'name', 'start-time', 'start-km', 'end-time', 'end-km', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'];
+    fields.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'SELECT') {
+        el.selectedIndex = 0;
+      } else {
+        el.value = '';
+      }
+    });
+    const key = getDraftKey();
+    if (key) localStorage.removeItem(key);
   }
 
   function buildDataString() {
