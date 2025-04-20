@@ -381,63 +381,44 @@
     }
   }
 
- async function generateAndShare() {
-  const startKm = +document.getElementById("start-km").value;
-  const endKm = +document.getElementById("end-km").value;
-  if (endKm <= startKm) return alert("End odometer must be greater than start!");
-  syncFormData();
+  async function generateAndShare() {
+    const startKm = +document.getElementById("start-km").value;
+    const endKm = +document.getElementById("end-km").value;
+    if (endKm <= startKm) return alert("End odometer must be greater than start!");
+    syncFormData();
 
-  const qrcodeDiv = document.getElementById("qrcode-section");
-  qrcodeDiv.innerHTML = "";
-  await new Promise(r => requestAnimationFrame(r));
-  new QRCode(qrcodeDiv, {
-    text: buildDataString(),
-    width: 150, height: 150,
-    colorDark: "#2c3e50", colorLight: "#ffffff",
-    correctLevel: QRCode.CorrectLevel.H
-  });
+    const qrcodeDiv = document.getElementById("qrcode-section");
+    qrcodeDiv.innerHTML = "";
+    await new Promise(r => requestAnimationFrame(r));
+    new QRCode(qrcodeDiv, {
+      text: buildDataString(),
+      width: 150, height: 150,
+      colorDark: "#2c3e50", colorLight: "#ffffff",
+      correctLevel: QRCode.CorrectLevel.H
+    });
 
-  await new Promise(r => setTimeout(r, 300));
-  const exportContainer = document.getElementById("export-container");
-  exportContainer.style.display = "flex";
-
-  try {
-    const canvas = await html2canvas(exportContainer, { useCORS: true, scale: 2 });
-    exportContainer.style.display = "none";
-
-    const img = document.createElement('img');
-    img.id = 'generated-image';
-    img.src = canvas.toDataURL();
-    img.style.maxWidth = "360px";
-    img.style.margin = "20px auto";
-    img.style.display = "block";
-    img.style.border = "1px solid #ccc";
-    img.style.borderRadius = "8px";
-    document.body.appendChild(img);
-    img.scrollIntoView({ behavior: "smooth" });
-
-    const isMobile = /MicroMessenger|DingTalk/.test(navigator.userAgent);
-    if (isMobile) {
-      const tip = document.createElement('div');
-      tip.textContent = "请长按上方图片保存，然后发送到群聊";
-      tip.style.textAlign = "center";
-      tip.style.margin = "10px 0";
-      tip.style.color = "#ff5722";
-      tip.style.fontWeight = "bold";
-      document.body.appendChild(tip);
-    } else {
+    await new Promise(r => setTimeout(r, 300));
+    const exportContainer = document.getElementById("export-container");
+    exportContainer.style.display = "flex";
+    try {
+      const canvas = await html2canvas(exportContainer, { useCORS: true, scale: 2 });
+      exportContainer.style.display = "none";
+      const img = document.createElement('img');
+      img.id = 'generated-image';
+      img.src = canvas.toDataURL();
+      document.body.appendChild(img);
       const link = document.createElement('a');
       link.download = `Driving_Record_${Date.now()}.png`;
       link.href = img.src;
       link.click();
+    } catch {
+      alert("Generation failed.");
+      exportContainer.style.display = "none";
     }
-  } catch {
-    alert("生成失败，请重试");
-    exportContainer.style.display = "none";
-  }
 
-  resetForm();
-}
+    // 自动清空并清除草稿
+    resetForm();
+  }
 
   function resetForm() {
     const fields = ['driver', 'date', 'plate', 'name', 'start-time', 'start-km', 'end-time', 'end-km', 'fuel', 'parking', 'car-wash', 'maintenance', 'taxi'];
