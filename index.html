@@ -436,24 +436,29 @@
   }
 
   function buildDataString() {
-    const plate = document.getElementById("plate").value;
-    const driver = document.getElementById("driver").value;
-    const dateStr = document.getElementById("date").value;
-    const date = dateStr.replace(/-/g, "");
-    const startTimeRaw = document.getElementById("start-time").value;
-    const endTimeRaw = document.getElementById("end-time").value;
-    const startTime = startTimeRaw.replace(":", "");
-    const endTime = endTimeRaw.replace(":", "");
-    const startKm = document.getElementById("start-km").value;
-    const endKm = document.getElementById("end-km").value;
+  const plate = document.getElementById("plate").value;
+  const driver = document.getElementById("driver").value;
+  const dateStr = document.getElementById("date").value;
+  const date = dateStr.replace(/-/g, "");
+  const startTimeRaw = document.getElementById("start-time").value;
+  const endTimeRaw = document.getElementById("end-time").value;
+  const startTime = startTimeRaw.replace(":", "");
+  const endTime = endTimeRaw.replace(":", "");
+  const startKm = document.getElementById("start-km").value;
+  const endKm = document.getElementById("end-km").value;
 
-    const startDateTime = new Date(`${dateStr}T${startTimeRaw}`);
-    let endDateTime = new Date(`${dateStr}T${endTimeRaw}`);
-    if (endDateTime <= startDateTime) endDateTime.setDate(endDateTime.getDate() + 1);
-    const endDate = endDateTime.toISOString().substring(0, 10).replace(/-/g, "");
-
-    return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}EDT:${endDate}ET:${endTime}SK:${startKm}EK:${endKm}`;
+  // 修复跨天判断
+  const [sh, sm] = startTimeRaw.split(':').map(Number);
+  const [eh, em] = endTimeRaw.split(':').map(Number);
+  let endDate = date;
+  if (eh < sh || (eh === sh && em <= sm)) {
+    const d = new Date(dateStr);
+    d.setDate(d.getDate() + 1);
+    endDate = d.toISOString().substring(0, 10).replace(/-/g, "");
   }
+
+  return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}EDT:${endDate}ET:${endTime}SK:${startKm}EK:${endKm}`;
+}
 </script>
 
 </body>
