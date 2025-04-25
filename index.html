@@ -331,7 +331,19 @@
     document.getElementById('show-plate').textContent = document.getElementById('plate').value;
     document.getElementById('show-booker').textContent = document.getElementById('name').value;
     document.getElementById('show-start-time').textContent = document.getElementById('start-time').value;
-    document.getElementById('show-end-time').textContent = document.getElementById('end-time').value;
+   const startStr = document.getElementById('start-time').value;
+const endStr = document.getElementById('end-time').value;
+const dateStr = document.getElementById('date').value;
+let durationText = endStr;
+
+if (startStr && endStr && dateStr) {
+  const start = new Date(`${dateStr}T${startStr}`);
+  let end = new Date(`${dateStr}T${endStr}`);
+  if (end <= start) end.setDate(end.getDate() + 1);
+  const diffMinutes = Math.round((end - start) / 60000);
+  durationText += ` (${diffMinutes} min)`;
+}
+document.getElementById('show-end-time').textContent = durationText;
     const startKmVal = +document.getElementById('start-km').value || 0;
     const endKmVal = +document.getElementById('end-km').value || 0;
     const kmDiff = endKmVal - startKmVal;
