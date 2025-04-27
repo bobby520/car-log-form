@@ -161,7 +161,9 @@
         <option value="Malik">Malik</option>
       </select>
     </div>
-    <div class="form-group"><label>Date:</label><input type="date" id="date" required></div>
+    <div class="form-group"><label>Date:</label>
+  <input type="date" id="date" required onchange="handleDateChange()">
+</div>
     <div class="form-group"><label>License Plate:</label>
       <select id="plate" required>
         <option value="" disabled selected>Select Vehicle</option>
@@ -214,6 +216,10 @@
   <div id="autosave-toast">Draft autosaved</div>
 
 <script>
+  function handleDateChange() {
+  const dateInput = document.getElementById('date');
+  dateInput.blur(); // 选完日期自动失焦
+}
   // 初始化逻辑增强
   document.addEventListener('DOMContentLoaded', () => {
     const lastDriver = localStorage.getItem('lastDriver');
