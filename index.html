@@ -317,8 +317,8 @@
       const weekend = (day === 0 || day === 6);
       let type = null, rate = 0;
 
-      if (weekend) { type = 'Weekend Overtime'; rate = 25; }
-      else if (hour < 8 || hour >= 17) { type = hour < 8 ? 'Early Overtime' : 'Late Overtime'; rate = 20; }
+      if (weekend) { type = 'Weekend Overtime'; rate = 20; }
+      else if (hour < 8 || hour >= 17) { type = hour < 8 ? 'Early Overtime' : 'Late Overtime'; rate = 15; }
 
       if (type) {
         const hrs = calcHours(current, next), amt = +(hrs * rate).toFixed(2);
