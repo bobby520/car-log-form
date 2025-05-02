@@ -296,40 +296,51 @@
   });
 
   function calculateOvertime() {
-    const start = document.getElementById('start-time').value;
-    const end = document.getElementById('end-time').value;
-    const date = document.getElementById('date').value;
-    if (!start || !end || !date) return { total: 0, breakdown: [] };
+  const start = document.getElementById('start-time').value;
+  const end = document.getElementById('end-time').value;
+  const date = document.getElementById('date').value;
+  if (!start || !end || !date) return { total: 0, breakdown: [] };
 
-    const s = new Date(`${date}T${start}`);
-    const e = new Date(`${date}T${end}`);
-    if (e <= s) e.setDate(e.getDate() + 1);
+  const s = new Date(`${date}T${start}`);
+  const e = new Date(`${date}T${end}`);
+  if (e <= s) e.setDate(e.getDate() + 1);
 
-    const breakdown = [], calcHours = (a, b) => ((b - a) / 3600000);
-    let total = 0, current = new Date(s);
+  const breakdown = [], calcHours = (a, b) => ((b - a) / 3600000);
+  let total = 0, current = new Date(s);
 
-    while (current < e) {
-      let next = new Date(current);
-      next.setHours(current.getHours() + 1, 0, 0, 0);
-      if (next > e) next = new Date(e);
+  while (current < e) {
+    let next = new Date(current);
+    next.setHours(current.getHours() + 1, 0, 0, 0);
+    if (next > e) next = new Date(e);
 
-      const day = current.getDay(), hour = current.getHours();
-      const weekend = (day === 0 || day === 6);
-      let type = null, rate = 0;
+    const day = current.getDay();
+    const hour = current.getHours();
+    const isWeekend = (day === 0 || day === 6); // Sunday = 0, Saturday = 6
+    let type = null, rate = 0;
 
-      if (weekend) { type = 'Weekend Overtime'; rate = 20; }
-      else if (hour < 8 || hour >= 17) { type = hour < 8 ? 'Early Overtime' : 'Late Overtime'; rate = 15; }
-
-      if (type) {
-        const hrs = calcHours(current, next), amt = +(hrs * rate).toFixed(2);
-        breakdown.push({ type, hours: hrs.toFixed(2), rate, amount: amt });
-        total += amt;
+    if (isWeekend) {
+      type = 'Weekend/Public Holiday';
+      rate = 20;
+    } else {
+      if (hour >= 17 && hour < 20) {
+        type = 'Evening Overtime (17:00–20:00)';
+        rate = 15;
+      } else if (hour >= 20 || hour < 8) {
+        type = 'Night Overtime (20:00–08:00)';
+        rate = 20;
       }
-      current = new Date(next);
     }
 
-    return { total: +total.toFixed(2), breakdown };
+    if (type) {
+      const hrs = calcHours(current, next), amt = +(hrs * rate).toFixed(2);
+      breakdown.push({ type, hours: hrs.toFixed(2), rate, amount: amt });
+      total += amt;
+    }
+    current = new Date(next);
   }
+
+  return { total: +total.toFixed(2), breakdown };
+}
 
   function syncFormData() {
     document.getElementById('show-driver').textContent = document.getElementById('driver').value;
@@ -383,8 +394,20 @@ document.getElementById('show-end-time').textContent = durationText;
     if (overtime.total > 0) {
       document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
       overtimeSection.style.display = '';
-      breakdown.innerHTML = overtime.breakdown.map(i =>
-        `<div class="overtime-row"><span>${i.type}</span><span>${i.hours}h × ${i.rate}AED</span><span>${i.amount}AED</span></div>`).join('');
+      // 按 type 分组汇总
+const grouped = {};
+overtime.breakdown.forEach(item => {
+  if (!grouped[item.type]) grouped[item.type] = [];
+  grouped[item.type].push(item);
+});
+
+// 渲染合并后的分组内容
+breakdown.innerHTML = Object.entries(grouped).map(([type, items]) => {
+  const totalHours = items.reduce((sum, i) => sum + parseFloat(i.hours), 0).toFixed(2);
+  const rate = items[0].rate;
+  const amount = items.reduce((sum, i) => sum + i.amount, 0).toFixed(2);
+  return `<div class="overtime-row"><span>${type}</span><span>${totalHours}h × ${rate}AED</span><span>${amount}AED</span></div>`;
+}).join('');
     } else {
       overtimeSection.style.display = 'none';
       breakdown.innerHTML = '';
