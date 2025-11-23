@@ -11,9 +11,9 @@
 
   <style>
     :root{
-      --card-width: 720px; /* 导出参考宽度（与 html2canvas 的 windowWidth 保持一致） */
-      --qr-size: 320px;    /* 二维码像素尺寸（导出前在 DOM 中的可视大小） */
-      --qr-pad: 18px;      /* 额外 quiet zone（白边） */
+      --card-width: 720px; /* 导出参考宽度（与 html2canvas 的 windowWidth 对齐） */
+      --qr-size: 320px;    /* 二维码像素尺寸 */
+      --qr-pad: 18px;      /* 额外留白 */
     }
     body {
       font-family: Arial, sans-serif;
@@ -70,10 +70,10 @@
       background:#777;
     }
 
-    /* ===== 导出卡片：新布局（两栏） ===== */
+    /* 导出卡片：两栏布局 */
     #export-container {
-      display: none;              /* 导出前显示为 flex，导出后隐藏；页面不常驻 */
-      width: var(--card-width);   /* 控制导出宽度，与 html2canvas windowWidth 对齐 */
+      display: none;
+      width: var(--card-width);
       margin: 15px auto;
       background: white;
       padding: 16px 16px 18px;
@@ -106,7 +106,6 @@
       gap: 12px;
     }
 
-    /* 左侧信息区（更紧凑） */
     #summary-section{
       flex:1;
     }
@@ -142,16 +141,14 @@
       font-size: 0.9em;
     }
 
-    /* 右侧二维码区（放大 + 厚留白） */
     .qr-col{
       width: calc(var(--qr-size) + var(--qr-pad)*2);
       text-align:center;
       background:#fff;
       border-radius: 8px;
       padding: var(--qr-pad);
-      border: 1px solid #eee;          /* 提示性的边框，导出清楚 */
+      border: 1px solid #eee;
     }
-    /* qrcodejs 会生成 <canvas>，强制大小 */
     #qrcode-section canvas {
       width: var(--qr-size) !important;
       height: var(--qr-size) !important;
@@ -160,7 +157,6 @@
       color:#666; font-size:12px; margin-top:4px;
     }
 
-    /* 预览导出后的图片 */
     #generated-image {
       max-width: 360px;
       margin: 16px auto 8px;
@@ -188,7 +184,6 @@
       z-index: 1000;
     }
 
-    /* 生成后引导长按保存（微信） */
     #save-hint {
       display:none; position:fixed; left:0; right:0; bottom:0;
       background:rgba(0,0,0,.75); color:#fff; padding:10px 14px;
@@ -213,19 +208,23 @@
       min-height:50px;
     }
 
-    /* 复制提示条 */
+    /* 复制提示条：顶部居中，醒目一点 */
     #copy-toast{
       display:none;
       position:fixed;
-      right:16px;
-      bottom:60px;
-      background-color:#007bff;
-      color:white;
-      padding:8px 14px;
-      border-radius:6px;
-      font-size:14px;
+      left:50%;
+      top:16px;
+      transform:translateX(-50%);
+      background-color:rgba(0,0,0,0.85);
+      color:#fff;
+      padding:10px 16px;
+      border-radius:20px;
+      font-size:13px;
       box-shadow:0 2px 6px rgba(0,0,0,0.2);
       z-index:1000;
+      max-width:90%;
+      text-align:center;
+      line-height:1.4;
     }
   </style>
 </head>
@@ -282,7 +281,7 @@
     </div>
   </div>
 
-  <!-- 导出卡片（两栏，居中LOGO） -->
+  <!-- 导出卡片 -->
   <div id="export-container">
     <div class="export-head">
       <img src="company-logo.png" class="export-logo" alt="Company Logo">
@@ -343,10 +342,9 @@
 
   function handleDateChange() {
     const dateInput = document.getElementById('date');
-    dateInput.blur(); // 选完日期自动失焦
+    dateInput.blur();
   }
 
-  // 初始化
   document.addEventListener('DOMContentLoaded', () => {
     const lastDriver = localStorage.getItem('lastDriver');
     if (lastDriver) {
@@ -359,7 +357,6 @@
     document.getElementById('date').value = localDate.toISOString().substring(0, 10);
   });
 
-  // 车牌 Other → 手输
   document.getElementById('plate').addEventListener('change', function () {
     if (this.value === 'Other') {
       const manualPlate = prompt('Enter license plate:');
@@ -398,13 +395,15 @@
     setTimeout(() => { toast.style.display = 'none'; }, 1200);
   }
 
-  function showCopyToast() {
+  // 顶部复制提示条
+  function showCopyToast(msg) {
     const toast = document.getElementById('copy-toast');
     if (!toast) return;
+    toast.textContent = msg || 'Text copied';
     toast.style.display = 'block';
     setTimeout(() => {
       toast.style.display = 'none';
-    }, 1200);
+    }, 2500);
   }
 
   function loadDraft() {
@@ -451,7 +450,7 @@
 
       const day = current.getDay();
       const hour = current.getHours();
-      const isWeekend = (day === 0 || day === 6); // Sunday = 0, Saturday = 6
+      const isWeekend = (day === 0 || day === 6);
       let type = null, rate = 0;
 
       if (isWeekend) {
@@ -532,7 +531,6 @@
     if (overtime.total > 0) {
       document.getElementById('show-overtime').textContent = `${overtime.total} AED`;
       overtimeSection.style.display = '';
-      // 按 type 分组
       const grouped = {};
       overtime.breakdown.forEach(item => {
         if (!grouped[item.type]) grouped[item.type] = [];
@@ -565,13 +563,11 @@
 
     syncFormData();
 
-    // 先生成二维码内容和文本备份
     const dataString = buildDataString();
     lastBackupText = dataString;
     document.getElementById('backup-text').value = dataString;
     document.getElementById('backup-wrapper').style.display = 'block';
 
-    // 生成大尺寸二维码（保持高对比 & H 级容错）
     const qrcodeDiv = document.getElementById("qrcode-section");
     qrcodeDiv.innerHTML = "";
     await new Promise(r => requestAnimationFrame(r));
@@ -586,7 +582,6 @@
 
     await new Promise(r => setTimeout(r, 220));
 
-    // 导出：使用 720 宽 + 2 倍像素
     const exportContainer = document.getElementById("export-container");
     exportContainer.style.display = "flex";
     try {
@@ -598,7 +593,7 @@
       exportContainer.style.display = "none";
 
       const img = document.getElementById('generated-image');
-      // 等图片加载完成再滚动到底部，避免安卓滚不到底
+
       img.onload = function () {
         const scrollHeight = Math.max(
           document.body.scrollHeight,
@@ -614,18 +609,15 @@
       img.style.display = 'block';
       lastImageDataUrl = img.src;
 
-      // 显示“长按保存”提示
       document.getElementById('save-hint').style.display = 'block';
       setTimeout(()=>{
         document.getElementById('save-hint').style.display='none';
       }, 4000);
 
-      // 不再自动下载文件，避免 iOS 自动跳转到图片预览
     } catch {
       alert("Generation failed.");
       exportContainer.style.display = "none";
     }
-    // 不自动 reset，避免用户还未保存
   }
 
   function resetForm() {
@@ -638,7 +630,7 @@
     });
     const key = getDraftKey();
     if (key) localStorage.removeItem(key);
-    // 清空预览图 & 文本备份
+
     const img = document.getElementById('generated-image');
     img.src = '';
     img.style.display = 'none';
@@ -660,7 +652,6 @@
     const startKm = document.getElementById("start-km").value;
     const endKm = document.getElementById("end-km").value;
 
-    // 跨天判断
     const [sh, sm] = startTimeRaw.split(':').map(Number);
     const [eh, em] = endTimeRaw.split(':').map(Number);
     let endDate = date;
@@ -669,13 +660,13 @@
       d.setDate(d.getDate() + 1);
       endDate = d.toISOString().substring(0, 10).replace(/-/g, "");
     }
-    // 固定字段串（与你 OA 脚本匹配）
     return `PL:${plate}DR:${driver}DT:${date}ST:${startTime}EDT:${endDate}ET:${endTime}SK:${startKm}EK:${endKm}`;
   }
 
   async function copyBackupText() {
     if (!lastBackupText) {
-      alert("Please generate the record first.");
+      // 不弹 alert，用顶部提示条
+      showCopyToast("请先生成记录，再复制文本备份。");
       return;
     }
     const text = lastBackupText;
@@ -688,11 +679,12 @@
         textarea.select();
         document.execCommand('copy');
       }
-      // 成功：右下角小提示，不再弹 alert
-      showCopyToast();
+      // 成功：顶部说明后续该怎么转发
+      showCopyToast("已复制文本备份。转发时请：1）长按图片转发；2）在消息输入框粘贴该文本，一并发送。");
     } catch (e) {
       console.log("Copy failed:", e);
-      alert("Copy failed. Please select and copy manually.");
+      // 失败也用提示条
+      showCopyToast("复制失败，请长按下方文本框，手动全选复制。");
     }
   }
 
@@ -705,7 +697,6 @@
       alert("Current browser does not support one-tap share. Please long-press the image to forward.");
       return;
     }
-    // 尝试带图片 + 文本分享
     try {
       if (lastImageDataUrl && navigator.canShare) {
         const res = await fetch(lastImageDataUrl);
@@ -721,8 +712,6 @@
           return;
         }
       }
-
-      // 回退为只分享文本
       const shareData = {
         title: "Driving Record",
         text: lastBackupText
