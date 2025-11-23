@@ -575,8 +575,16 @@
 
       // ⭐ 自动滚动到图片位置（不会跳到系统预览）
       setTimeout(() => {
-        img.scrollIntoView({behavior: 'smooth', block: 'center'});
-      }, 150);
+  // 直接平滑滚动到页面最底部
+  const scrollHeight = Math.max(
+    document.body.scrollHeight,
+    document.documentElement.scrollHeight
+  );
+  window.scrollTo({
+    top: scrollHeight,
+    behavior: 'smooth'
+  });
+}, 150);
 
       // 显示“长按保存”提示
       document.getElementById('save-hint').style.display = 'block';
@@ -699,3 +707,4 @@
 </script>
 </body>
 </html>
+
