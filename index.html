@@ -208,23 +208,24 @@
       min-height:50px;
     }
 
-    /* 复制提示条：顶部居中，醒目一点 */
+    /* 复制提示框：居中矩形，可放长文案 */
     #copy-toast{
       display:none;
       position:fixed;
       left:50%;
-      top:16px;
-      transform:translateX(-50%);
+      top:50%;
+      transform:translate(-50%, -50%);
       background-color:rgba(0,0,0,0.85);
       color:#fff;
-      padding:10px 16px;
-      border-radius:20px;
+      padding:14px 18px;
+      border-radius:10px;
       font-size:13px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.2);
+      box-shadow:0 2px 10px rgba(0,0,0,0.35);
       z-index:1000;
       max-width:90%;
-      text-align:center;
-      line-height:1.4;
+      text-align:left;
+      line-height:1.5;
+      word-break:break-word;
     }
   </style>
 </head>
@@ -333,8 +334,8 @@
     </div>
   </div>
 
-  <!-- 复制成功提示条 -->
-  <div id="copy-toast">Text copied</div>
+  <!-- 复制成功提示框（中间） -->
+  <div id="copy-toast"></div>
 
 <script>
   let lastBackupText = "";
@@ -343,6 +344,54 @@
   function handleDateChange() {
     const dateInput = document.getElementById('date');
     dateInput.blur();
+  }
+
+  // 多语言提示文案
+  function getLang() {
+    const lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+    return lang;
+  }
+
+  function getMessage(key) {
+    const lang = getLang();
+    const isZh = lang.startsWith('zh');
+
+    if (isZh) {
+      switch (key) {
+        case 'need_generate':
+          return '请先完成上面的信息并生成记录，然后再点击“Copy Text Backup”复制文本备份。';
+        case 'copy_success':
+          return '已复制文本备份。\n\n请按以下步骤转发给办公室：\n1）长按下方生成的图片，选择转发；\n2）在聊天输入框中粘贴刚复制的文本内容；\n3）图片 + 文本一起发送，方便系统扫码录入。';
+        case 'copy_failed':
+          return '复制失败。\n\n请长按下面的文本框，选择“全选”，再手动复制，用于配合图片一起发送。';
+        default:
+          return '';
+      }
+    } else {
+      // 默认英文
+      switch (key) {
+        case 'need_generate':
+          return 'Please fill in the form above and generate the record first, then tap "Copy Text Backup" to copy the text.';
+        case 'copy_success':
+          return 'Text backup copied.\n\nWhen sending to office, please:\n1) Long-press the generated image below and forward it;\n2) Paste this copied text into the message box;\n3) Send image and text together for OA system scanning.';
+        case 'copy_failed':
+          return 'Copy failed.\n\nPlease long-press the text box below, select all, and copy manually to send it together with the image.';
+        default:
+          return '';
+      }
+    }
+  }
+
+  // 顶部/中间复制提示框
+  function showCopyToast(msgKey) {
+    const toast = document.getElementById('copy-toast');
+    if (!toast) return;
+    const text = getMessage(msgKey) || 'Text copied.';
+    toast.textContent = text;
+    toast.style.display = 'block';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 4000);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -393,17 +442,6 @@
     const toast = document.getElementById('autosave-toast');
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 1200);
-  }
-
-  // 顶部复制提示条
-  function showCopyToast(msg) {
-    const toast = document.getElementById('copy-toast');
-    if (!toast) return;
-    toast.textContent = msg || 'Text copied';
-    toast.style.display = 'block';
-    setTimeout(() => {
-      toast.style.display = 'none';
-    }, 2500);
   }
 
   function loadDraft() {
@@ -665,8 +703,8 @@
 
   async function copyBackupText() {
     if (!lastBackupText) {
-      // 不弹 alert，用顶部提示条
-      showCopyToast("请先生成记录，再复制文本备份。");
+      // 不再 alert，用居中提示框
+      showCopyToast('need_generate');
       return;
     }
     const text = lastBackupText;
@@ -679,12 +717,11 @@
         textarea.select();
         document.execCommand('copy');
       }
-      // 成功：顶部说明后续该怎么转发
-      showCopyToast("已复制文本备份。转发时请：1）长按图片转发；2）在消息输入框粘贴该文本，一并发送。");
+      // 成功：给详细步骤提示
+      showCopyToast('copy_success');
     } catch (e) {
       console.log("Copy failed:", e);
-      // 失败也用提示条
-      showCopyToast("复制失败，请长按下方文本框，手动全选复制。");
+      showCopyToast('copy_failed');
     }
   }
 
