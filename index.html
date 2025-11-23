@@ -160,11 +160,12 @@
     /* 导出图里的操作提示（会被画进图片） */
     .export-tip{
       margin-top: 8px;
-      font-size: 11px;
-      color: #777;
-      border-top: 1px dashed #ddd;
+      font-size: 13px;           /* 字号加大 */
+      color: #d84315;            /* 醒目的橙红色 */
+      font-weight: bold;         /* 加粗 */
+      border-top: 1px dashed #ffab91;
       padding-top: 6px;
-      line-height: 1.4;
+      line-height: 1.5;
       white-space: normal;
       word-break: break-word;
     }
@@ -229,7 +230,7 @@
       padding:12px 0;
     }
 
-    /* 复制提示框：居中矩形，支持多行文字 */
+    /* 复制提示框：居中矩形，自适应不同手机 */
     #copy-toast{
       display:none;
       position:fixed;
@@ -238,20 +239,34 @@
       transform:translate(-50%, -50%);
       background-color:rgba(0,0,0,0.85);
       color:#fff;
-      padding:14px 18px;
+      padding:12px 14px;
       border-radius:10px;
       font-size:13px;
       box-shadow:0 2px 10px rgba(0,0,0,0.35);
       z-index:1000;
-      max-width:90%;
+      max-width:86vw;
+      max-height:60vh;
+      overflow-y:auto;
       text-align:left;
-      line-height:1.5;
+      line-height:1.45;
       word-break:break-word;
     }
     #copy-toast b{
       display:block;
       margin-bottom:4px;
       font-size:14px;
+    }
+    @media (max-width: 480px){
+      #copy-toast{
+        font-size:12px;
+        padding:10px 12px;
+        max-width:90vw;
+        max-height:55vh;
+      }
+      #copy-toast b{
+        font-size:13px;
+        margin-bottom:3px;
+      }
     }
   </style>
 </head>
@@ -354,7 +369,9 @@
 
   <!-- 文本备份 + 一键复制 -->
   <div id="backup-wrapper">
-    <span id="backup-label">Text backup (same as QR content, paste into group chat if scan fails):</span>
+    <span id="backup-label">
+      Same as QR content. Paste here or into OA “Same as QR content, paste here” field / group chat when needed:
+    </span>
     <textarea id="backup-text" readonly></textarea>
     <button type="button" id="copy-btn" onclick="copyBackupText()">Copy Text Backup / 复制文本备份</button>
   </div>
@@ -390,7 +407,7 @@
           return '<b>已复制文本备份</b>在微信群发送用车记录时：<br>'
                + '1）先长按下面的图片，选择“转发”到对应微信群；<br>'
                + '2）再在微信群聊天框长按 → 粘贴刚才复制的这段文本；<br>'
-               + '3）图片 + 文本一起发送，方便后续扫码枪识别并自动录入系统。';
+               + '3）图片 + 文本一起发送，方便后续扫码录入用车记录。';
         case 'copy_failed':
           return '<b>复制失败</b>请长按下面的文本框，选择“全选/拷贝”，手动复制这段文本，再和图片一起发送到微信群。';
         default:
@@ -404,7 +421,7 @@
           return '<b>Text backup copied</b>When sending this driving record to the WeChat group (or any group chat):<br>'
                + '1) Long-press the generated image below and forward it to the group;<br>'
                + '2) Long-press the chat input box in the group and paste this copied text;<br>'
-               + '3) Send the image and text together so the office can later scan and auto-fill the form.';
+               + '3) Send the image and text together so it is easy to scan and record the driving data.';
         case 'copy_failed':
           return '<b>Copy failed</b>Please long-press the text box below, select all and copy manually, then send the text together with the image to the group chat.';
         default:
@@ -413,14 +430,16 @@
     }
   }
 
-  // 导出图片内部的小字提示
+  // 导出图片内部的小字提示（会写入图片）
   function getExportTipText() {
     const lang = getLang();
     const isZh = lang.startsWith('zh');
     if (isZh) {
-      return '提示：长按此图片保存或转发到微信群，并将“复制文本备份”的内容粘贴到消息栏，一并发送，方便办公室扫码录入用车记录。';
+      // 你要求的中文内容
+      return '长按此图片保存或转发到微信群，并将“复制文本备份”的内容粘贴到消息栏，一并发送，方便扫码录入用车记录。';
     } else {
-      return 'Tip: Long-press this image to save or forward it to the group chat, and paste the copied text backup into the message box so both image and text are sent together for office scanning.';
+      // 英文对应说明
+      return 'Long-press this image to save or forward it to the WeChat group, and paste the copied text backup into the message box so image and text are sent together for easy scanning and driving record input.';
     }
   }
 
