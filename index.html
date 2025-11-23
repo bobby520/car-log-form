@@ -208,7 +208,7 @@
       min-height:50px;
     }
 
-    /* 复制提示框：居中矩形，可放长文案 */
+    /* 复制提示框：居中矩形，支持多行文字 */
     #copy-toast{
       display:none;
       position:fixed;
@@ -226,6 +226,11 @@
       text-align:left;
       line-height:1.5;
       word-break:break-word;
+    }
+    #copy-toast b{
+      display:block;
+      margin-bottom:4px;
+      font-size:14px;
     }
   </style>
 </head>
@@ -334,7 +339,7 @@
     </div>
   </div>
 
-  <!-- 复制成功提示框（中间） -->
+  <!-- 复制提示框（中间多行） -->
   <div id="copy-toast"></div>
 
 <script>
@@ -359,39 +364,39 @@
     if (isZh) {
       switch (key) {
         case 'need_generate':
-          return '请先完成上面的信息并生成记录，然后再点击“Copy Text Backup”复制文本备份。';
+          return '<b>尚未生成记录</b>请先填写上方信息，并点击 “Generate Export Image” 生成图片和二维码，然后再点击 “Copy Text Backup” 复制文本备份。';
         case 'copy_success':
-          return '已复制文本备份。\n\n请按以下步骤转发至微信群：\n1）长按下方生成的图片，选择转发；\n2）在聊天输入框中粘贴刚复制的文本内容；\n3）图片 + 文本一起发送，方便系统扫码录入。';
+          return '<b>已复制文本备份</b>发送至微信群时请按以下步骤：<br>1）长按下方生成的图片，选择“转发”；<br>2）在聊天输入框中粘贴刚复制的这段文本；<br>3）图片 + 文本一起发送，方便系统扫码录入、自动填表。';
         case 'copy_failed':
-          return '复制失败。\n\n请长按下面的文本框，选择“全选”，再手动复制，用于配合图片一起发送。';
+          return '<b>复制失败</b>请长按下面的文本框，选择“全选/拷贝”，手动复制这段文本，再和图片一起发送至微信群。';
         default:
-          return '';
+          return '<b>提示</b>操作已完成。';
       }
     } else {
       // 默认英文
       switch (key) {
         case 'need_generate':
-          return 'Please fill in the form above and generate the record first, then tap "Copy Text Backup" to copy the text.';
+          return '<b>Record not generated</b>Please complete the form above and tap “Generate Export Image” first, then tap “Copy Text Backup” to copy the text.';
         case 'copy_success':
-          return 'Text backup copied.\n\nWhen sending to office, please:\n1) Long-press the generated image below and forward it;\n2) Paste this copied text into the message box;\n3) Send image and text together for OA system scanning.';
+          return '<b>Text backup copied</b>When sending to group chat, please:<br>1) Long-press the generated image below and forward it;<br>2) Paste this copied text into the chat input box;<br>3) Send image and text together so OA can scan and fill the form automatically.';
         case 'copy_failed':
-          return 'Copy failed.\n\nPlease long-press the text box below, select all, and copy manually to send it together with the image.';
+          return '<b>Copy failed</b>Please long-press the text box below, select all and copy manually, then send the text together with the image.';
         default:
-          return '';
+          return '<b>Notice</b>Operation completed.';
       }
     }
   }
 
-  // 顶部/中间复制提示框
+  // 居中提示框（支持 HTML）
   function showCopyToast(msgKey) {
     const toast = document.getElementById('copy-toast');
     if (!toast) return;
-    const text = getMessage(msgKey) || 'Text copied.';
-    toast.textContent = text;
+    const html = getMessage(msgKey);
+    toast.innerHTML = html;
     toast.style.display = 'block';
     setTimeout(() => {
       toast.style.display = 'none';
-    }, 4000);
+    }, 6000); // 停留久一点，方便阅读
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -703,7 +708,6 @@
 
   async function copyBackupText() {
     if (!lastBackupText) {
-      // 不再 alert，用居中提示框
       showCopyToast('need_generate');
       return;
     }
@@ -717,7 +721,6 @@
         textarea.select();
         document.execCommand('copy');
       }
-      // 成功：给详细步骤提示
       showCopyToast('copy_success');
     } catch (e) {
       console.log("Copy failed:", e);
@@ -762,4 +765,3 @@
 </script>
 </body>
 </html>
-
