@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -573,18 +573,18 @@
       img.style.display = 'block';
       lastImageDataUrl = img.src;
 
-      // 自动滚动到图片位置
-      img.scrollIntoView({behavior: 'smooth', block: 'center'});
+      // ⭐ 自动滚动到图片位置（不会跳到系统预览）
+      setTimeout(() => {
+        img.scrollIntoView({behavior: 'smooth', block: 'center'});
+      }, 150);
 
-      // 引导“长按保存到相册再发送”
+      // 显示“长按保存”提示
       document.getElementById('save-hint').style.display = 'block';
-      setTimeout(()=>{ document.getElementById('save-hint').style.display='none'; }, 4000);
+      setTimeout(()=>{
+        document.getElementById('save-hint').style.display='none';
+      }, 4000);
 
-      // 浏览器环境可尝试自动下载（微信里可能无效）
-      const link = document.createElement('a');
-      link.download = `Driving_Record_${Date.now()}.png`;
-      link.href = img.src;
-      link.click();
+      // 不再自动下载文件，避免 iOS 自动跳转到图片预览
     } catch {
       alert("Generation failed.");
       exportContainer.style.display = "none";
@@ -670,7 +670,6 @@
     }
     // 尝试带图片 + 文本分享
     try {
-      let files = [];
       if (lastImageDataUrl && navigator.canShare) {
         const res = await fetch(lastImageDataUrl);
         const blob = await res.blob();
@@ -684,9 +683,9 @@
           await navigator.share(shareDataWithFile);
           return;
         }
-        files = []; // 回退到只有文本
       }
 
+      // 回退为只分享文本
       const shareData = {
         title: "Driving Record",
         text: lastBackupText
