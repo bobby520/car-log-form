@@ -370,7 +370,7 @@
   <!-- 文本备份 + 一键复制 -->
   <div id="backup-wrapper">
     <span id="backup-label">
-      Text backup (same as QR content, can paste into OA if scan fails):
+      Same as QR content. Paste here or into OA “Same as QR content, paste here” field / group chat when needed:
     </span>
     <textarea id="backup-text" readonly></textarea>
     <button type="button" id="copy-btn" onclick="copyBackupText()">Copy Text Backup / 复制文本备份</button>
@@ -407,7 +407,7 @@
           return '<b>已复制文本备份</b>在微信群发送用车记录时：<br>'
                + '1）先长按下面的图片，选择“转发”到对应微信群；<br>'
                + '2）再在微信群聊天框长按 → 粘贴刚才复制的这段文本；<br>'
-               + '3）图片 + 文本一起发送，方便后续扫码录入用车记录。';
+               + '3）图片 + 文本一起发送，方便扫码录入用车记录。';
         case 'copy_failed':
           return '<b>复制失败</b>请长按下面的文本框，选择“全选/拷贝”，手动复制这段文本，再和图片一起发送到微信群。';
         default:
@@ -435,11 +435,9 @@
     const lang = getLang();
     const isZh = lang.startsWith('zh');
     if (isZh) {
-      // 你要求的中文内容
-      return '长按此图片保存或转发到微信群，并将“复制文本备份”的内容粘贴到消息栏，一并发送。';
+      return '长按此图片保存或转发到微信群，并将“复制文本备份”的内容粘贴到消息栏，一并发送，方便扫码录入用车记录。';
     } else {
-      // 英文对应说明
-      return 'Long-press this image to save or forward it to the WeChat group, and paste the copied text backup into the message box so image and text are sent together.';
+      return 'Long-press this image to save or forward it to the WeChat group, and paste the copied text backup into the message box so image and text are sent together for easy scanning and driving record input.';
     }
   }
 
@@ -655,6 +653,7 @@
     }
   }
 
+  // 生成图片 + 文本备份（含 Booked by）
   async function generateAndShare() {
     const startKm = +document.getElementById("start-km").value;
     const endKm = +document.getElementById("end-km").value;
@@ -662,16 +661,28 @@
 
     syncFormData();
 
-    const dataString = buildDataString();
-    lastBackupText = dataString;
-    document.getElementById('backup-text').value = dataString;
+    // 原始二维码内容（给 OA 脚本用，不能乱动字段结构）
+    const qrString = buildDataString();
+
+    // 订车人：始终用英文前缀 “Booked by”
+    const booker = document.getElementById('name').value.trim();
+    let backupText = qrString;
+    if (booker) {
+      const prefix = `Booked by: ${booker}`;
+      // 人看的放前面，机器用的 QR 串放后面（带换行）
+      backupText = prefix + '\n' + qrString;
+    }
+
+    lastBackupText = backupText;
+    document.getElementById('backup-text').value = backupText;
     document.getElementById('backup-wrapper').style.display = 'block';
 
+    // 二维码仍然只编码纯 qrString，不带 “Booked by”
     const qrcodeDiv = document.getElementById("qrcode-section");
     qrcodeDiv.innerHTML = "";
     await new Promise(r => requestAnimationFrame(r));
     new QRCode(qrcodeDiv, {
-      text: dataString,
+      text: qrString,
       width: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--qr-size')),
       height: parseInt(getComputedStyle(document.documentElement).getPropertyValue('--qr-size')),
       colorDark: "#000000",
@@ -785,5 +796,3 @@
 </script>
 </body>
 </html>
-
-
