@@ -208,6 +208,16 @@
       min-height:50px;
     }
 
+    /* 显眼的复制按钮 */
+    #copy-btn{
+      width:100%;
+      margin-top:6px;
+      background-color:#ff9800; /* 橙色更醒目 */
+      font-weight:bold;
+      font-size:15px;
+      padding:12px 0;
+    }
+
     /* 复制提示框：居中矩形，支持多行文字 */
     #copy-toast{
       display:none;
@@ -329,14 +339,11 @@
   <div id="save-hint">长按上方图片保存到相册，然后从相册发送（避免微信临时链接过期）</div>
   <div id="autosave-toast">Draft autosaved</div>
 
-  <!-- 文本备份 + 一键复制 / 转发 -->
+  <!-- 文本备份 + 一键复制 -->
   <div id="backup-wrapper">
-    <span id="backup-label">Text backup (same as QR content, can paste into OA if scan fails):</span>
+    <span id="backup-label">Text backup (same as QR content, paste into group chat if scan fails):</span>
     <textarea id="backup-text" readonly></textarea>
-    <div class="btn-row">
-      <button type="button" class="btn-secondary" onclick="copyBackupText()">Copy Text Backup</button>
-      <button type="button" onclick="shareRecord()">Share Image &amp; Text</button>
-    </div>
+    <button type="button" id="copy-btn" onclick="copyBackupText()">Copy Text Backup / 复制文本备份</button>
   </div>
 
   <!-- 复制提示框（中间多行） -->
@@ -364,11 +371,11 @@
     if (isZh) {
       switch (key) {
         case 'need_generate':
-          return '<b>尚未生成记录</b>请先填写上方信息，并点击 “Generate Export Image” 生成图片和二维码，然后再点击 “Copy Text Backup” 复制文本备份。';
+          return '<b>尚未生成记录</b>请先填写上方信息，并点击 “Generate Export Image” 生成图片和二维码，然后再点击下面的橙色按钮复制文本备份。';
         case 'copy_success':
-          return '<b>已复制文本备份</b>发送至微信群时请按以下步骤：<br>1）长按下方生成的图片，选择“转发”；<br>2）在聊天输入框中粘贴刚复制的这段文本；<br>3）图片 + 文本一起发送，方便系统扫码录入、自动填表。';
+          return '<b>已复制文本备份</b>在微信群发送用车记录时：<br>1）先长按下面的图片，选择“转发”到对应微信群；<br>2）再在微信群聊天框长按 → 粘贴刚才复制的这段文本；<br>3）图片 + 文本一起发送，方便后续用扫码枪识别并自动录入系统。';
         case 'copy_failed':
-          return '<b>复制失败</b>请长按下面的文本框，选择“全选/拷贝”，手动复制这段文本，再和图片一起发送至微信群。';
+          return '<b>复制失败</b>请长按下面的文本框，选择“全选/拷贝”，手动复制这段文本，再和图片一起发送到微信群。';
         default:
           return '<b>提示</b>操作已完成。';
       }
@@ -376,11 +383,11 @@
       // 默认英文
       switch (key) {
         case 'need_generate':
-          return '<b>Record not generated</b>Please complete the form above and tap “Generate Export Image” first, then tap “Copy Text Backup” to copy the text.';
+          return '<b>Record not generated</b>Please complete the form above and tap “Generate Export Image” first, then tap the orange button below to copy the text backup.';
         case 'copy_success':
-          return '<b>Text backup copied</b>When sending to group chat, please:<br>1) Long-press the generated image below and forward it;<br>2) Paste this copied text into the chat input box;<br>3) Send image and text together so OA can scan and fill the form automatically.';
+          return '<b>Text backup copied</b>When sending this driving record to the WeChat group (or any group chat):<br>1) Long-press the generated image below and forward it to the group;<br>2) Long-press the chat input box in the group and paste this copied text;<br>3) Send image and text together so the OA system can later scan and fill the form automatically.';
         case 'copy_failed':
-          return '<b>Copy failed</b>Please long-press the text box below, select all and copy manually, then send the text together with the image.';
+          return '<b>Copy failed</b>Please long-press the text box below, select all and copy manually, then send the text together with the image to the group chat.';
         default:
           return '<b>Notice</b>Operation completed.';
       }
@@ -396,7 +403,7 @@
     toast.style.display = 'block';
     setTimeout(() => {
       toast.style.display = 'none';
-    }, 6000); // 停留久一点，方便阅读
+    }, 6000);
   }
 
   document.addEventListener('DOMContentLoaded', () => {
@@ -725,41 +732,6 @@
     } catch (e) {
       console.log("Copy failed:", e);
       showCopyToast('copy_failed');
-    }
-  }
-
-  async function shareRecord() {
-    if (!lastBackupText) {
-      alert("Please generate the record first.");
-      return;
-    }
-    if (!navigator.share) {
-      alert("Current browser does not support one-tap share. Please long-press the image to forward.");
-      return;
-    }
-    try {
-      if (lastImageDataUrl && navigator.canShare) {
-        const res = await fetch(lastImageDataUrl);
-        const blob = await res.blob();
-        const file = new File([blob], `Driving_Record_${Date.now()}.png`, { type: "image/png" });
-        const shareDataWithFile = {
-          title: "Driving Record",
-          text: lastBackupText,
-          files: [file]
-        };
-        if (navigator.canShare(shareDataWithFile)) {
-          await navigator.share(shareDataWithFile);
-          return;
-        }
-      }
-      const shareData = {
-        title: "Driving Record",
-        text: lastBackupText
-      };
-      await navigator.share(shareData);
-    } catch (e) {
-      console.log("Share failed:", e);
-      alert("Share failed in this environment. Please long-press the image and forward manually.");
     }
   }
 </script>
