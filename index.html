@@ -173,6 +173,7 @@
     @media (max-width: 480px) {
       .summary-label { width: 100px; }
     }
+
     #autosave-toast {
       display: none;
       position: fixed;
@@ -186,6 +187,7 @@
       box-shadow: 0 2px 6px rgba(0,0,0,0.2);
       z-index: 1000;
     }
+
     /* 生成后引导长按保存（微信） */
     #save-hint {
       display:none; position:fixed; left:0; right:0; bottom:0;
@@ -209,6 +211,21 @@
       font-size:12px;
       resize:vertical;
       min-height:50px;
+    }
+
+    /* 复制提示条 */
+    #copy-toast{
+      display:none;
+      position:fixed;
+      right:16px;
+      bottom:60px;
+      background-color:#007bff;
+      color:white;
+      padding:8px 14px;
+      border-radius:6px;
+      font-size:14px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.2);
+      z-index:1000;
     }
   </style>
 </head>
@@ -317,6 +334,9 @@
     </div>
   </div>
 
+  <!-- 复制成功提示条 -->
+  <div id="copy-toast">Text copied</div>
+
 <script>
   let lastBackupText = "";
   let lastImageDataUrl = "";
@@ -376,6 +396,15 @@
     const toast = document.getElementById('autosave-toast');
     toast.style.display = 'block';
     setTimeout(() => { toast.style.display = 'none'; }, 1200);
+  }
+
+  function showCopyToast() {
+    const toast = document.getElementById('copy-toast');
+    if (!toast) return;
+    toast.style.display = 'block';
+    setTimeout(() => {
+      toast.style.display = 'none';
+    }, 1200);
   }
 
   function loadDraft() {
@@ -569,22 +598,21 @@
       exportContainer.style.display = "none";
 
       const img = document.getElementById('generated-image');
+      // 等图片加载完成再滚动到底部，避免安卓滚不到底
+      img.onload = function () {
+        const scrollHeight = Math.max(
+          document.body.scrollHeight,
+          document.documentElement.scrollHeight
+        );
+        window.scrollTo({
+          top: scrollHeight,
+          behavior: 'smooth'
+        });
+      };
+
       img.src = canvas.toDataURL("image/png");
       img.style.display = 'block';
       lastImageDataUrl = img.src;
-
-      // ⭐ 自动滚动到图片位置（不会跳到系统预览）
-      setTimeout(() => {
-  // 直接平滑滚动到页面最底部
-  const scrollHeight = Math.max(
-    document.body.scrollHeight,
-    document.documentElement.scrollHeight
-  );
-  window.scrollTo({
-    top: scrollHeight,
-    behavior: 'smooth'
-  });
-}, 150);
 
       // 显示“长按保存”提示
       document.getElementById('save-hint').style.display = 'block';
@@ -660,7 +688,8 @@
         textarea.select();
         document.execCommand('copy');
       }
-      alert("Text copied. You can paste it into WeChat or OA.");
+      // 成功：右下角小提示，不再弹 alert
+      showCopyToast();
     } catch (e) {
       console.log("Copy failed:", e);
       alert("Copy failed. Please select and copy manually.");
@@ -707,4 +736,3 @@
 </script>
 </body>
 </html>
-
