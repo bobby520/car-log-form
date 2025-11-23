@@ -157,6 +157,18 @@
       color:#666; font-size:12px; margin-top:4px;
     }
 
+    /* 导出图里的操作提示（会被画进图片） */
+    .export-tip{
+      margin-top: 8px;
+      font-size: 11px;
+      color: #777;
+      border-top: 1px dashed #ddd;
+      padding-top: 6px;
+      line-height: 1.4;
+      white-space: normal;
+      word-break: break-word;
+    }
+
     #generated-image {
       max-width: 360px;
       margin: 16px auto 8px;
@@ -184,10 +196,9 @@
       z-index: 1000;
     }
 
+    /* 原来的 #save-hint 保留但不再使用 */
     #save-hint {
-      display:none; position:fixed; left:0; right:0; bottom:0;
-      background:rgba(0,0,0,.75); color:#fff; padding:10px 14px;
-      text-align:center; z-index:9999; font-size:14px;
+      display:none;
     }
 
     /* 文本备份区域 */
@@ -332,11 +343,13 @@
         <div class="qr-caption">Scan for details</div>
       </div>
     </div>
+
+    <!-- 会被画进图片里的操作提示，自动切换语言 -->
+    <div id="export-tip" class="export-tip"></div>
   </div>
 
-  <!-- 生成后的图片与提示 -->
+  <!-- 生成后的图片 -->
   <img id="generated-image" alt="Generated Card Preview">
-  <div id="save-hint">长按上方图片保存到相册，然后从相册发送（避免微信临时链接过期）</div>
   <div id="autosave-toast">Draft autosaved</div>
 
   <!-- 文本备份 + 一键复制 -->
@@ -358,12 +371,13 @@
     dateInput.blur();
   }
 
-  // 多语言提示文案
+  // 语言识别
   function getLang() {
     const lang = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
     return lang;
   }
 
+  // 弹窗提示文本（用车记录）
   function getMessage(key) {
     const lang = getLang();
     const isZh = lang.startsWith('zh');
@@ -371,26 +385,42 @@
     if (isZh) {
       switch (key) {
         case 'need_generate':
-          return '<b>尚未生成记录</b>请先填写上方信息，并点击 “Generate Export Image” 生成图片和二维码，然后再点击下面的橙色按钮复制文本备份。';
+          return '<b>尚未生成用车记录</b>请先填写上方信息，并点击 “Generate Export Image” 生成图片和二维码，然后再点击下面的橙色按钮复制文本备份。';
         case 'copy_success':
-          return '<b>已复制文本备份</b>在微信群发送用车记录时：<br>1）先长按下面的图片，选择“转发”到对应微信群；<br>2）再在微信群聊天框长按 → 粘贴刚才复制的这段文本；<br>3）图片 + 文本一起发送，方便后续用扫码枪识别并自动录入系统。';
+          return '<b>已复制文本备份</b>在微信群发送用车记录时：<br>'
+               + '1）先长按下面的图片，选择“转发”到对应微信群；<br>'
+               + '2）再在微信群聊天框长按 → 粘贴刚才复制的这段文本；<br>'
+               + '3）图片 + 文本一起发送，方便后续扫码枪识别并自动录入系统。';
         case 'copy_failed':
           return '<b>复制失败</b>请长按下面的文本框，选择“全选/拷贝”，手动复制这段文本，再和图片一起发送到微信群。';
         default:
           return '<b>提示</b>操作已完成。';
       }
     } else {
-      // 默认英文
       switch (key) {
         case 'need_generate':
-          return '<b>Record not generated</b>Please complete the form above and tap “Generate Export Image” first, then tap the orange button below to copy the text backup.';
+          return '<b>Driving record not generated</b>Please complete the form above and tap “Generate Export Image” first, then tap the orange button below to copy the text backup.';
         case 'copy_success':
-          return '<b>Text backup copied</b>When sending this driving record to the WeChat group (or any group chat):<br>1) Long-press the generated image below and forward it to the group;<br>2) Long-press the chat input box in the group and paste this copied text;<br>3) Send image and text together so the OA system can later scan and fill the form automatically.';
+          return '<b>Text backup copied</b>When sending this driving record to the WeChat group (or any group chat):<br>'
+               + '1) Long-press the generated image below and forward it to the group;<br>'
+               + '2) Long-press the chat input box in the group and paste this copied text;<br>'
+               + '3) Send the image and text together so the office can later scan and auto-fill the form.';
         case 'copy_failed':
           return '<b>Copy failed</b>Please long-press the text box below, select all and copy manually, then send the text together with the image to the group chat.';
         default:
           return '<b>Notice</b>Operation completed.';
       }
+    }
+  }
+
+  // 导出图片内部的小字提示
+  function getExportTipText() {
+    const lang = getLang();
+    const isZh = lang.startsWith('zh');
+    if (isZh) {
+      return '提示：长按此图片保存或转发到微信群，并将“复制文本备份”的内容粘贴到消息栏，一并发送，方便办公室扫码录入用车记录。';
+    } else {
+      return 'Tip: Long-press this image to save or forward it to the group chat, and paste the copied text backup into the message box so both image and text are sent together for office scanning.';
     }
   }
 
@@ -633,6 +663,10 @@
     await new Promise(r => setTimeout(r, 220));
 
     const exportContainer = document.getElementById("export-container");
+    const exportTip = document.getElementById("export-tip");
+    // 生成图片前，根据系统语言写入提示文字
+    exportTip.textContent = getExportTipText();
+
     exportContainer.style.display = "flex";
     try {
       const canvas = await html2canvas(exportContainer, {
@@ -658,11 +692,6 @@
       img.src = canvas.toDataURL("image/png");
       img.style.display = 'block';
       lastImageDataUrl = img.src;
-
-      document.getElementById('save-hint').style.display = 'block';
-      setTimeout(()=>{
-        document.getElementById('save-hint').style.display='none';
-      }, 4000);
 
     } catch {
       alert("Generation failed.");
